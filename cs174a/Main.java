@@ -23,8 +23,10 @@ public class Main
 		App app = new App();                        // We need the default constructor of your App implementation.  Make sure such
 													// constructor exists.
 		String r = app.initializeSystem();          // We'll always call this function before testing your system.
+
 		if( r.equals( "0" ) )
 		{
+			app.setUpUI();
 			app.exampleAccessToDB();                // Example on how to connect to the DB.
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
@@ -32,7 +34,10 @@ public class Main
 			System.out.println( r );
 
 			// Another example test.
-			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "account1", 1234.56, "theTaxID", "Im YoungMing", "Known" );
+			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "12345", 1234.56, "987654321", "Im YoungMing", "Known" );
+			System.out.println( r );
+
+			r = app.createPocketAccount("54321", "12345", 500.15, "987654321");
 			System.out.println( r );
 		}
 	}
