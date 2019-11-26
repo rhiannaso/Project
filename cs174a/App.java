@@ -25,6 +25,8 @@ import java.util.Random;
 public class App implements Testable
 {
 	private OracleConnection _connection;                   // Example connection object to your DB.
+	//private ATMApp atmApp;
+	//private BankTeller bankTeller;
 	//private LinkedHashMap<String, Account> accountsInUse; // ACCOUNT ID: VARCHAR(5) 
 
 	/**
@@ -33,7 +35,8 @@ public class App implements Testable
 	 */
 	App()
 	{
-		// TODO: Any actions you need.
+		// atmApp = new ATMApp(this);
+		// bankTeller = new BankTeller(this);
 	}
 
 	/**
@@ -107,13 +110,12 @@ public class App implements Testable
 		System.out.println("Enter the number associated with the action you'd like to take: ");
 		String choice = s.nextLine();
 		System.out.println(choice);
-		createTables();
+		//createTables();
 		if(choice.equals("0")) {
-			// call atm app main
+			// atmApp.displayUI();
 		} else if (choice.equals("1")) {
-			// call bank teller main
+			// bankTeller.displayUI();
 		} else {
-			//createTables();
 			System.out.println("Setting a New Date\n");
 			System.out.println("Enter the year: ");
 			String year = s.nextLine();
@@ -123,7 +125,6 @@ public class App implements Testable
 			String day = s.nextLine();
 			setDate(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day));
 		}
-		//createTables();
 		s.close();
 	}
 
@@ -140,6 +141,7 @@ public class App implements Testable
 			statement.executeUpdate( "DROP TABLE Owners" );
 			statement.executeUpdate( "DROP TABLE Primary" );
 			statement.executeUpdate( "DROP TABLE LinkedTo" );
+			statement.executeUpdate( "DROP SEQUENCE transId_seq" );
 			return "0";
 		}
 		catch( SQLException e )
@@ -160,7 +162,7 @@ public class App implements Testable
 
 		String createAccounts = "CREATE TABLE Accounts (" +
 								"aid VARCHAR(5), " +
-								"branch VARCHAR(15), " +
+								"branch VARCHAR(15) DEFAULT \'Los Angeles\', " +
 								"init_balance DECIMAL(15, 2), " +
 								"curr_balance DECIMAL(15, 2), " +
 								"interest DECIMAL(4, 2), " +
@@ -214,6 +216,10 @@ public class App implements Testable
 								"aid_pocket VARCHAR(5), " +
 								"PRIMARY KEY (aid_main, aid_pocket) )"; 
 
+		String createSequence = "CREATE SEQUENCE transId_seq "+
+								"START WITH 1 " +
+								"INCREMENT BY 1";
+
 		try( Statement statement = _connection.createStatement() )
 		{
 			statement.executeUpdate( createDate );
@@ -224,6 +230,7 @@ public class App implements Testable
 			statement.executeUpdate( createOwners );
 			statement.executeUpdate( createPrimary );
 			statement.executeUpdate( createLinkedTo );
+			statement.executeUpdate( createSequence );
 			return "0";
 		}
 		catch( SQLException e )
@@ -259,6 +266,7 @@ public class App implements Testable
 			System.err.println( e.getMessage() );
 			return "1 "+Integer.toString(year)+"-"+Integer.toString(month)+"-"+Integer.toString(day);
 		}
+
 		String query = "INSERT INTO BankDate(year, month, day) " +
 						"VALUES (?, ?, ?) ";
 		try( PreparedStatement prepStatement = _connection.prepareStatement(query))
@@ -273,13 +281,14 @@ public class App implements Testable
 			System.err.println( e.getMessage() );
 			return "1 "+Integer.toString(year)+"-"+Integer.toString(month)+"-"+Integer.toString(day);
 		}
+
 		return "0 "+Integer.toString(year)+"-"+Integer.toString(month)+"-"+Integer.toString(day);
 	}
 
 	@Override
 	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address )
 	{
-		if (initialBalance < 1000) {
+		if (Double.compare(initialBalance, 1000) < 0) {
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		} else {
 			String createAccount = "INSERT INTO Accounts(aid, branch, init_balance, curr_balance, interest, active, type) " +
@@ -309,32 +318,71 @@ public class App implements Testable
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
 
-			createCustomer(id, tin, name, address);
-
-			String createPrimary = "INSERT INTO Primary(tax_id, aid) " +
-								"VALUES (?, ?) ";
-			try( PreparedStatement prepStatement = _connection.prepareStatement(createPrimary))
-			{
-				prepStatement.setString(1, tin);
-				prepStatement.setString(2, id);
-				prepStatement.executeUpdate();
+			// Check if exists
+			String checkCust = checkCustomerExists(tin);
+			if(checkCust.equals("0")) {
+				createCustomer(id, tin, name, address);
 			}
-			catch( SQLException e )
-			{
-				System.err.println( e.getMessage() );
+
+			if(checkCust.equals("-1")) {
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
+
+			createOwners(tin, id);
+
+			createPrimary(tin, id);
 
 			createTransaction("deposit", initialBalance, 0.00, 0, 0.00, id, id);
 			return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		}
 	}
 
+	public String checkCustomerExists(String tin) {
+		String findCustomer = "SELECT * FROM Customers C WHERE C.tax_id = ?";
+		try( PreparedStatement prepStatement = _connection.prepareStatement(findCustomer))
+		{
+			prepStatement.setString(1, tin);
+			ResultSet rs = prepStatement.executeQuery();
+			// if customer doesn't exist yet
+			if(rs.next() == false) {
+				return "0";
+			} else {
+				return "1";
+			}
+		}
+		catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Error with checking customer existence.");
+			return "-1";
+		}
+	}
+
 	@Override
 	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin )
 	{
-		// NEED TO CONSIDER $5 MONTHLY FEE ON FIRST TRANSACTION 
-		// NEED TO CHECK THAT CUSTOMER ALREADY HAS A CHECKING OR SAVINGS ACCOUNT
+		// Check if customer already has the savings or checkings account
+		String findCustomer = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
+		try( PreparedStatement prepStatement3 = _connection.prepareStatement(findCustomer))
+		{
+			prepStatement3.setString(1, tin);
+			String accId = "";
+			ResultSet rs = prepStatement3.executeQuery();
+			while(rs.next()) {
+				accId = rs.getString(1);
+			}
+			if (accId.equals(linkedId) == false) {
+				System.out.println("The given account is not owned by the customer with the given ID.");
+				return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+			}
+		}
+		catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("oops 1");
+			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+		}
+
 		String createAccount = "INSERT INTO Accounts(aid, branch, init_balance, curr_balance, interest, active, type) " +
 								"VALUES (?, ?, ?, ?, ?, ?, ?) ";
 		try( PreparedStatement prepStatement2 = _connection.prepareStatement(createAccount))
@@ -351,7 +399,7 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			System.out.println("oops 1");
+			System.out.println("oops 2");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
@@ -366,48 +414,48 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			System.out.println("oops 2");
-			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
-		}
-
-		String createPrimary = "INSERT INTO Primary(tax_id, aid) " +
-								"VALUES (?, ?) ";
-		try( PreparedStatement prepStatement3 = _connection.prepareStatement(createPrimary))
-		{
-			prepStatement3.setString(1, tin);
-			prepStatement3.setString(2, id);
-			prepStatement3.executeUpdate();
-		}
-		catch( SQLException e )
-		{
-			System.err.println( e.getMessage() );
 			System.out.println("oops 3");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
-		String createOwners = "INSERT INTO Owners(tax_id, aid) " +
-							"VALUES (?, ?) ";
-		try( PreparedStatement prepStatement4 = _connection.prepareStatement(createOwners))
-		{
-			prepStatement4.setString(1, tin);
-			prepStatement4.setString(2, accountId);
-			prepStatement4.executeUpdate();
-		}
-		catch( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			return "1";
-		}
+		createPrimary(tin, id);
+
+		createOwners(tin, id);
 
 		topUp(id, initialTopUp);
+		
+		String check = chargeFee(linkedId);
+		if(check.equals("1")) {
+			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin; 
+		}
 
 		return "0 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+	}
+
+	public String chargeFee(String id) {
+		double balance = 0.00;
+		balance = getBalance(id);
+
+		balance = balance - 5;
+
+		if(Double.compare(balance, 0.00) >= 0) {
+			String check = "";
+			check = updateBalance(balance, id);
+			if(check.equals("1")) {
+				System.out.println("Error with update balance in charge fee.");
+				return "1";
+			}
+			createTransaction("fee", 5, 0.00, 0, 0.00, id, id);
+			return "0";
+		} else {
+			System.out.println("Error with charge fee");
+			return "1";
+		}
 	}
 
 	@Override
 	public String createCustomer( String accountId, String tin, String name, String address )
 	{
-		// NEED TO CHECK IF CUSTOMER EXISTS YET
 		String createCustomer = "INSERT INTO Customers(tax_id, aid, name, address, pin) " +
 								"VALUES (?, ?, ?, ?, ?) ";
 		try( PreparedStatement prepStatement = _connection.prepareStatement(createCustomer))
@@ -416,7 +464,7 @@ public class App implements Testable
 			prepStatement.setString(2, accountId);
 			prepStatement.setString(3, name);
 			prepStatement.setString(4, address);
-			prepStatement.setString(5, "1717");
+			prepStatement.setString(5, "1717"); // Do we need to encrypt this?
 			prepStatement.executeUpdate();
 		}
 		catch( SQLException e )
@@ -425,6 +473,10 @@ public class App implements Testable
 			return "1";
 		}
 
+		return "0";
+	}
+
+	public void createOwners(String tin, String accountId) {
 		String createOwners = "INSERT INTO Owners(tax_id, aid) " +
 							"VALUES (?, ?) ";
 		try( PreparedStatement prepStatement2 = _connection.prepareStatement(createOwners))
@@ -436,9 +488,24 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			return "1";
+			System.out.println("Could not create owner.");
 		}
-		return "0";
+	}
+
+	public void createPrimary(String tin, String id) {
+		String createPrimary = "INSERT INTO Primary(tax_id, aid) " +
+								"VALUES (?, ?) ";
+		try( PreparedStatement prepStatement3 = _connection.prepareStatement(createPrimary))
+		{
+			prepStatement3.setString(1, tin);
+			prepStatement3.setString(2, id);
+			prepStatement3.executeUpdate();
+		}
+		catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Could not create primary owner.");
+		}
 	}
 
 	public ArrayList<Integer> getDateInfo() {
@@ -468,6 +535,7 @@ public class App implements Testable
 		} catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
+			System.out.println("Error with getting date: date likely not set yet.");
 		}
 		return dateInfo;
 	}
@@ -478,34 +546,27 @@ public class App implements Testable
 		// WRITE STATEMENTS FOR CREATING ACCOUNT OBJECT, MODIFYING BALANCE, AND RESETTING
 		double oldBalance = 0;
 		double newBalance = 0;
-		String getBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
-		try (PreparedStatement statement = _connection.prepareStatement(getBalance)) {
-			statement.setString(1, accountId);
-			ResultSet rs = statement.executeQuery();
-			while(rs.next()) {
-				oldBalance = rs.getDouble(1);
+		boolean shouldClose = false;
+		String check = "";
+		
+		oldBalance = getBalance(accountId);
+		if(Double.compare(oldBalance, -1.00) == 0) {
+			return "1 " + oldBalance + " " + newBalance;
+		}
+
+		newBalance = oldBalance + amount;
+		
+		if(Double.compare(newBalance, 0.00) >= 0) {
+			check = updateBalance(newBalance, accountId);
+			if (check.equals(1)) {
+				return "1 " + oldBalance + " " + newBalance;
 			}
 
-			newBalance = oldBalance + amount;
-		} catch( SQLException e )
-		{
-			System.err.println( e.getMessage() );
+			createTransaction("deposit", amount, 0.00, 0, 0.00, accountId, accountId);
+		} else {
 			return "1 " + oldBalance + " " + newBalance;
 		}
 
-		String updBalance = "UPDATE Accounts SET A.curr_balance = ? WHERE A.aid = ?";
-		try(PreparedStatement updateBalance = _connection.prepareStatement(updBalance)) {
-			updateBalance.setDouble(1, newBalance);
-			updateBalance.setString(2, accountId);
-			updateBalance.executeUpdate();
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			return "1 " + oldBalance + " " + newBalance;
-		}
-
-		createTransaction("deposit", amount, 0.00, 0, 0.00, accountId, accountId);
-		
 		return "0 " + oldBalance + " " + newBalance;
 	}
 
@@ -513,19 +574,46 @@ public class App implements Testable
 	public String showBalance( String accountId )
 	{
 		double balance = 0;
-		String query = "SELECT A.balance FROM Accounts A WHERE A.aid = ?";
-		try(PreparedStatement statement = _connection.prepareStatement(query)) {
+		balance = getBalance(accountId);
+		if(Double.compare(balance, -1.00) == 0) {
+			System.out.println("Could not retrieve balance.");
+			return "1 " + balance;
+		} else {
+			System.out.println(balance);
+			return "0 " + balance;
+		}
+	}
+
+	public double getBalance(String accountId) {
+		String getBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
+		double balance = 0.00;
+		try(PreparedStatement statement = _connection.prepareStatement(getBalance)) {
 			statement.setString(1, accountId);
 			ResultSet rs = statement.executeQuery();
 			while(rs.next()) {
 				balance = rs.getDouble(1);
-				System.out.println(balance);
 			}
-			return "0 " + balance;
 		} catch ( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			return "1 " + balance;
+			System.out.println("Could not retrieve balance");
+			return -1.00;
+		}
+		return balance;
+	}
+
+	public String updateBalance(double balance, String aid) {
+		String updBalance = "UPDATE Accounts SET curr_balance = ? WHERE aid = ?";
+		try(PreparedStatement updateBalance = _connection.prepareStatement(updBalance)) {
+			updateBalance.setDouble(1, balance);
+			updateBalance.setString(2, aid);
+			updateBalance.executeUpdate();
+			return "0";
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Could not update balance.");
+			return "1";
 		}
 	}
 
@@ -537,6 +625,8 @@ public class App implements Testable
 		String main_id = "";
 		double linkedNewBalance = 0;
 		double pocketNewBalance = 0;
+		boolean shouldPClose = false;
+		boolean shouldMClose = false;
 
 		String getMain = "SELECT L.aid_main FROM LinkedTo L WHERE L.aid_pocket = ?";
 		try( PreparedStatement mainStatement = _connection.prepareStatement(getMain) ) {
@@ -548,67 +638,33 @@ public class App implements Testable
 		} catch ( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			System.out.println("oops 4");
+			System.out.println("Could not find linked account ID.");
 			return "1 " + linkedNewBalance + " " + pocketNewBalance;
 		}
 
-		String getPocketBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
-		try(PreparedStatement statement = _connection.prepareStatement(getPocketBalance)) {
-			statement.setString(1, accountId);
-			ResultSet rs = statement.executeQuery();
-			while(rs.next()) {
-				pocketOldBalance = rs.getDouble(1);
-			}
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			System.out.println("oops 5");
-			return "1 " + linkedNewBalance + " " + pocketNewBalance;
-		}
-
-		String getMainBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
-		try(PreparedStatement statement2 = _connection.prepareStatement(getMainBalance)) {
-			statement2.setString(1, main_id);
-			ResultSet rs2 = statement2.executeQuery();
-			while(rs2.next()) {
-				mainOldBalance = rs2.getDouble(1);
-			}
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			System.out.println("oops 6");
+		pocketOldBalance = getBalance(accountId);
+		mainOldBalance = getBalance(main_id);
+		if(Double.compare(pocketOldBalance, -1.00) == 0 || Double.compare(mainOldBalance, -1.00) == 0) {
 			return "1 " + linkedNewBalance + " " + pocketNewBalance;
 		}
 
 		linkedNewBalance = mainOldBalance - amount;
-
 		pocketNewBalance = pocketOldBalance + amount;
 
-		String updBalance = "UPDATE Accounts SET curr_balance = ? WHERE aid = ?";
-		try(PreparedStatement updateBalance = _connection.prepareStatement(updBalance)) {
-			updateBalance.setDouble(1, linkedNewBalance);
-			updateBalance.setString(2, main_id);
-			updateBalance.executeUpdate();
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			System.out.println("oops 7");
+		if(Double.compare(linkedNewBalance, 0.00) >= 0 && Double.compare(pocketNewBalance, 0.00) >= 0) {
+			String check = "";
+			String check2 = "";
+			check = updateBalance(linkedNewBalance, main_id);
+			check2 = updateBalance(pocketNewBalance, accountId);
+
+			if(check.equals("1") || check2.equals("1")) {
+				return "1 " + linkedNewBalance + " " + pocketNewBalance;
+			}
+
+			createTransaction("topUp", amount, 0.00, 0, 0.00, accountId, main_id);
+		} else {
 			return "1 " + linkedNewBalance + " " + pocketNewBalance;
 		}
-
-		String updPBalance = "UPDATE Accounts SET curr_balance = ? WHERE aid = ?";
-		try(PreparedStatement updatePBalance = _connection.prepareStatement(updPBalance)) {
-			updatePBalance.setDouble(1, pocketNewBalance);
-			updatePBalance.setString(2, accountId);
-			updatePBalance.executeUpdate();
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			System.out.println("oops 8");
-			return "1 " + linkedNewBalance + " " + pocketNewBalance;
-		}
-
-		createTransaction("topUp", amount, 0.00, 0, 0.00, accountId, main_id);
 
 		return "0 " + linkedNewBalance + " " + pocketNewBalance;
 	}
@@ -620,60 +676,33 @@ public class App implements Testable
 		double toOldBalance = 0;
 		double fromNewBalance = 0;
 		double toNewBalance = 0;
+		boolean shouldFromClose = false;
+		boolean shouldToClose = false;
 
-		String getFromBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
-		try( PreparedStatement fromStatement = _connection.prepareStatement(getFromBalance)) {
-			fromStatement.setString(1, from);
-			ResultSet rs_from = fromStatement.executeQuery();
-			while(rs_from.next()) {
-				fromOldBalance = rs_from.getDouble(1);
-			}
-	 	} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			return "1 " + fromNewBalance + " " + toNewBalance;
-		}
+		fromOldBalance = getBalance(from);
+		toOldBalance = getBalance(to);
 
-		String getToBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
-		try( PreparedStatement toStatement = _connection.prepareStatement(getToBalance) ) {
-			toStatement.setString(1, to);
-			ResultSet rs_to = toStatement.executeQuery();
-			while(rs_to.next()) {
-				toOldBalance = rs_to.getDouble(1);
-			}
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
+		if(Double.compare(fromOldBalance, -1.00) == 0 || Double.compare(toOldBalance, -1.00) == 0) {
 			return "1 " + fromNewBalance + " " + toNewBalance;
 		}
 
 		fromNewBalance = fromOldBalance - amount;
-
 		toNewBalance = toOldBalance + amount;
 
-		String updFromBalance = "UPDATE Accounts SET A.curr_balance = ? WHERE A.aid = ?";
-		try(PreparedStatement updateFBalance = _connection.prepareStatement(updFromBalance)) {
-			updateFBalance.setDouble(1, fromNewBalance);
-			updateFBalance.setString(2, from);
-			updateFBalance.executeUpdate();
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
+		if(Double.compare(fromNewBalance, 0.00) >= 0 && Double.compare(toNewBalance, 0.00) >= 0) {
+			String check = "";
+			String check2 = "";
+			check = updateBalance(fromNewBalance, from);
+			check2 = updateBalance(toNewBalance, to);
+
+			if(check.equals("1") || check2.equals("1")) {
+				return "1 " + fromNewBalance + " " + toNewBalance;
+			}
+
+			createTransaction("payFriend", amount, 0.00, 0, 0.00, to, from);
+		} else {
 			return "1 " + fromNewBalance + " " + toNewBalance;
 		}
-
-		String updToBalance = "UPDATE Accounts SET A.curr_balance = ? WHERE A.aid = ?";
-		try(PreparedStatement updateTBalance = _connection.prepareStatement(updToBalance)) {
-			updateTBalance.setDouble(1, toNewBalance);
-			updateTBalance.setString(2, to);
-			updateTBalance.executeUpdate();
-		} catch ( SQLException e )
-		{
-			System.err.println( e.getMessage() );
-			return "1 " + fromNewBalance + " " + toNewBalance;
-		}
-
-		createTransaction("payFriend", amount, 0.00, 0, 0.00, to, from);
 
 		return "0 " + fromNewBalance + " " + toNewBalance;
 	}
@@ -693,7 +722,7 @@ public class App implements Testable
 				System.out.println(closedIds.get(i));
 				closedAccs += closedAccs + " " + closedIds.get(i);
 			}
-			return "0 " + closedAccs;
+			return "0" + closedAccs;
 		} catch ( SQLException e )
 		{
 			System.err.println( e.getMessage() );
@@ -701,26 +730,45 @@ public class App implements Testable
 		}
 	}
 
-	public String createTransaction( String type, double amount, double fee, int check_no, double avg_daily_balance, String aid_to, String aid_from) {
-		// GENERATE RANDOM TID - right now since we're not, unique constraint (primary key) is violated
-		// CHECK IF ACCOUNT BALANCE FALLS BELOW 0.01
-		int tid = 0;
+	// return true if needs to be closed; false if okay
+	public boolean checkAccountBalance(double balance) {
+		if(Double.compare(balance, 0.01) == 0 || Double.compare(balance, 0.00) == 0) {
+			System.out.println("Account balance less than $0.02. Account should close.");
+			return true;
+		} else {
+			System.out.println("Account is okay.");
+			return false;
+		}
+	}
 
+	public void closeAccount(String accountId) {
+		String updActive = "UPDATE Accounts SET active = 0 WHERE aid = ?";
+		try(PreparedStatement updateActive = _connection.prepareStatement(updActive)) {
+			updateActive.setString(1, accountId);
+			updateActive.executeUpdate();
+			System.out.println("Closed account.");
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Could not close account.");
+		}
+	}
+
+	public String createTransaction( String type, double amount, double fee, int check_no, double avg_daily_balance, String aid_to, String aid_from) {
 		ArrayList<Integer> dateInfo = new ArrayList<Integer>(getDateInfo());
 
 		String createTransactions = "INSERT INTO Transactions(tid, year, month, day, amount, type, fee, check_no, avg_daily_balance) " +
-									"VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ";
+									"VALUES (transId_seq.nextval, ?, ?, ?, ?, ?, ?, ?, ?) ";
 		try( PreparedStatement prepStatement3 = _connection.prepareStatement(createTransactions))
 		{
-			prepStatement3.setInt(1, tid);
-			prepStatement3.setInt(2, dateInfo.get(0));
-			prepStatement3.setInt(3, dateInfo.get(1));
-			prepStatement3.setInt(4, dateInfo.get(2));
-			prepStatement3.setDouble(5, amount);
-			prepStatement3.setString(6, type);
-			prepStatement3.setDouble(7, fee);
-			prepStatement3.setInt(8, check_no);
-			prepStatement3.setDouble(9, avg_daily_balance);
+			prepStatement3.setInt(1, dateInfo.get(0));
+			prepStatement3.setInt(2, dateInfo.get(1));
+			prepStatement3.setInt(3, dateInfo.get(2));
+			prepStatement3.setDouble(4, amount);
+			prepStatement3.setString(5, type);
+			prepStatement3.setDouble(6, fee);
+			prepStatement3.setInt(7, check_no);
+			prepStatement3.setDouble(8, avg_daily_balance);
 			prepStatement3.executeUpdate();
 		}
 		catch( SQLException e )
@@ -730,12 +778,11 @@ public class App implements Testable
 		}
 
 		String createInvolves = "INSERT INTO Involves(aid_to, aid_from, tid) " +
-								"VALUES (?, ?, ?) ";
+								"VALUES (?, ?, transId_seq.currval) ";
 		try( PreparedStatement prepStatement3 = _connection.prepareStatement(createInvolves))
 		{
 			prepStatement3.setString(1, aid_to);
 			prepStatement3.setString(2, aid_from);
-			prepStatement3.setInt(3, tid);
 			prepStatement3.executeUpdate();
 		}
 		catch( SQLException e )
@@ -743,7 +790,33 @@ public class App implements Testable
 			System.err.println( e.getMessage() );
 			return "1";
 		}
+
+		// Check if account should be closed
+		boolean shouldToClose = checkAccountBalance(getBalance(aid_to));
+		
+		if(shouldToClose == true) {
+			closeAccount(aid_to);
+		}
+
+		if(aid_from.equals(aid_to) == false) {
+			boolean shouldFromClose = checkAccountBalance(getBalance(aid_from));
+
+			if(shouldFromClose == true) {
+				closeAccount(aid_from);
+			}
+		}
+
 		return "0";
+	}
+
+	public boolean verifyPIN(String pin) {
+		// Implement encryption and check
+		return true;
+	}
+
+	public void setPIN(String OldPIN, String NewPIN) {
+		// Implement encryption and push into database
+		return;
 	}
 
 }
