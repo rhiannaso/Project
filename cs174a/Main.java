@@ -26,18 +26,36 @@ public class Main
 
 		if( r.equals( "0" ) )
 		{
+			app.createTables();
 			app.setUpUI();
 			app.exampleAccessToDB();                // Example on how to connect to the DB.
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
-			r = app.listClosedAccounts();
-			System.out.println( r );
 
 			// Another example test.
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "12345", 1234.56, "987654321", "Im YoungMing", "Known" );
 			System.out.println( r );
 
-			r = app.createPocketAccount("54321", "12345", 500.15, "987654321");
+			r = app.createPocketAccount("54321", "12345", 1229.55, "987654321");
+			System.out.println( r );
+
+			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "67890", 1500.75, "123456789", "Tester McTesting", "6565 Segovia" );
+			System.out.println( r );
+
+			r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "34567", 20.75, "123456789", "Tester McTesting", "6565 Segovia" );
+			System.out.println( r );
+
+			// Doesn't show up in owners b/c of primary key constraint - need to check if customer exists before trying to reinsert
+			r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "23456", 1120.75, "123456789", "Tester McTesting", "6565 Segovia" );
+			System.out.println( r );
+
+			r = app.createPocketAccount("99999", "67890", 1000.55, "987654321");
+			System.out.println( r );
+
+			r = app.listClosedAccounts();
+			System.out.println( r );
+
+			r = app.payFriend("67890", "23456", 500.25);
 			System.out.println( r );
 		}
 	}
