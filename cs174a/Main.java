@@ -2,7 +2,7 @@ package cs174a;                         // THE BASE PACKAGE FOR YOUR APP MUST BE
 
 // DO NOT REMOVE THIS IMPORT.
 import cs174a.Testable.*;
-
+import java.util.Scanner;
 /**
  * This is the class that launches your application.
  * DO NOT CHANGE ITS NAME.
@@ -26,9 +26,15 @@ public class Main
 
 		if( r.equals( "0" ) )
 		{
-			app.dropTables();
-			app.createTables();
-			//app.setUpUI();
+			Scanner s = new Scanner(System.in);
+			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n-----------------");
+			String input = s.nextLine();
+			if(input.equals("0")){
+				app.dropTables();
+				app.createTables();
+			} else if (input.equals("1")){
+			 	app.setUpUI();
+			} else {
 			//app.exampleAccessToDB();                // Example on how to connect to the DB.
 
 			// Example tests.  We'll overwrite your Main.main() function with our final tests.
@@ -44,6 +50,11 @@ public class Main
 
 			System.out.println("----------------------------");
 
+			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "99999", 1111.11, "999999999", "John Smith", "123 Main" );
+			System.out.println( r );
+
+			System.out.println("----------------------------");
+
 			r = app.listClosedAccounts();
 			System.out.println( r );
 
@@ -55,6 +66,11 @@ public class Main
 			System.out.println("----------------------------");
 
 			r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "67890", 1500.75, "123456789", "Tester McTesting", "6565 Segovia" );
+			System.out.println( r );
+
+			System.out.println("----------------------------");
+
+			r = app.createPocketAccount("09876", "67890", 100.00, "123456789");
 			System.out.println( r );
 
 			System.out.println("----------------------------");
@@ -96,6 +112,7 @@ public class Main
 
 			r = app.generateCustomerReport("987654321");
 			System.out.println( r );
+			}
 		}
 	}
 	//!### FINALIZAMOS
