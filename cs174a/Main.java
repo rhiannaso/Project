@@ -96,6 +96,23 @@ public class Main
 
 			r = app.generateCustomerReport("987654321");
 			System.out.println( r );
+
+			System.out.println("----------------------------");
+
+			app.setTaxId("987654321");
+
+			boolean check = app.verifyPIN("1717");
+			System.out.println( check );
+
+			System.out.println("----------------------------");
+
+			double num = app.getNumDays();
+			System.out.println(Double.toString(num));
+
+			System.out.println("----------------------------");
+
+			//double num2 = app.calculateAverage("67890", 1500.75, 30.0);
+			//System.out.println(Double.toString(num2));
 		}
 	}
 	//!### FINALIZAMOS
