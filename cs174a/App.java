@@ -13,6 +13,7 @@ import oracle.jdbc.OracleConnection;
 
 import java.util.LinkedHashMap;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Scanner;
 import java.util.ArrayList;
 
@@ -168,12 +169,6 @@ public class App implements Testable
 	@Override
 	public String createTables()
 	{
-		/*String createDate = "CREATE TABLE BankDate(" +
-							"year INTEGER, " +
-							"month INTEGER, " +
-							"day INTEGER, " +
-							"PRIMARY KEY(year, month, day))"; */
-
 		String createDate = "CREATE TABLE BankDate(" +
 							"d DATE, " +
 							"PRIMARY KEY(d))"; 
@@ -196,18 +191,6 @@ public class App implements Testable
 								"address VARCHAR(50), " +
 								"pin VARCHAR(4) NOT NULL, " +
 								"PRIMARY KEY (tax_id) )"; 
-
-		/*String createTransactions = "CREATE TABLE Transactions (" +
-									"tid INTEGER, " +
-									"year INTEGER, " +
-									"month INTEGER, " +
-									"day INTEGER, " +
-									"amount DECIMAL(15,2), " +
-									"type VARCHAR(20), " +
-									"fee DECIMAL(15,2), " +
-									"check_no INTEGER, " +
-									"avg_daily_balance DECIMAL(15,2), " +
-									"PRIMARY KEY (tid) )"; */
 
 		String createTransactions = "CREATE TABLE Transactions (" +
 									"tid INTEGER, " +
@@ -997,11 +980,47 @@ public class App implements Testable
 		return "0 " + oldBalance + " " + newBalance;
 	}
 
+	public boolean isOwner(String accountId) {
+		String checkOwner = "";
+		String check = "SELECT O.tax_id FROM Owners O WHERE O.aid = ?";
+		try(PreparedStatement statement = _connection.prepareStatement(check)) {
+			statement.setString(1, accountId);
+			ResultSet rs = statement.executeQuery();
+			while(rs.next()) {
+				checkOwner = rs.getString("tax_id");
+			}
+			if(checkOwner.equals(this.taxId) == false) {
+				return false;
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return false;
+		}
+		return true;
+	}
+
 	public String transfer(String from, String to, double amount ) {
-		// check that mutual owner
+		double fromOldBalance = 0;
+		double toOldBalance = 0;
+		double fromNewBalance = 0;
+		double toNewBalance = 0;
 
 		if(Double.compare(amount, 2000) > 0) {
-			return "1";
+			System.out.println("Transfer amount is too large");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+
+		boolean check = isOwner(from);
+		if(check == false) {
+			System.out.println("Customer initiating transfer is not an owner of one or more of the accounts involved.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+
+		check = isOwner(to);
+		if(check == false) {
+			System.out.println("Customer initiating transfer is not an owner of one or more of the accounts involved.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
 		}
 
 		boolean checkType = isCheckingOrSavings(from);
@@ -1009,10 +1028,30 @@ public class App implements Testable
 		
 		if (checkType == false || checkType2 == false) {
 			System.out.println("The involved accounts must be checking/savings accounts.");
-			//return "1 " + fromNewBalance + " " + toNewBalance; 
+			return "1 " + fromNewBalance + " " + toNewBalance; 
 		}
 
-		return "0";
+		fromOldBalance = getBalance(from);
+		toOldBalance = getBalance(to);
+
+		if(Double.compare(fromOldBalance, -1.00) == 0 || Double.compare(toOldBalance, -1.00) == 0) {
+			return "1 " + fromNewBalance + " " + toNewBalance;
+		}
+
+		fromNewBalance = fromOldBalance - amount;
+		toNewBalance = toOldBalance + amount;
+
+		if(Double.compare(fromNewBalance, 0.00) >= 0 && Double.compare(toNewBalance, 0.00) >= 0) {
+			String isValid = createTransaction("transfer", amount, 0.00, 0, 0.00, to, from, toNewBalance, fromNewBalance);
+			if(isValid.equals("1")) {
+				System.out.println("Transaction failed.");
+				return "1 " + fromNewBalance + " " + toNewBalance;
+			}
+		} else {
+			return "1 " + fromNewBalance + " " + toNewBalance;
+		}
+
+		return "0 "+ fromNewBalance + " " + toNewBalance;
 	}
 
 	public String collect(String pocketId, String linkedId, double amount) {
@@ -1064,7 +1103,11 @@ public class App implements Testable
 		double toNewBalance = 0;
 		double fee = amount * 0.02;
 
-		// CHECK THAT CUSTOMER INITIATING IS OWNER OF FROM
+		boolean checkOwner = isOwner(from);
+		if(checkOwner == false) {
+			System.out.println("Customer initiating wire is not the owner of the account.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
 
 		boolean checkType = isCheckingOrSavings(from);
 		boolean checkType2 = isCheckingOrSavings(to);
@@ -1135,14 +1178,247 @@ public class App implements Testable
 		return "0 " + oldBalance + " " + newBalance;
 	}
 
+	public double getNumDays() {
+		String bankDate = getDateInfo();
+		String getMonth = "SELECT EXTRACT( MONTH FROM TO_DATE(?, \'YYYY-MM-DD\') ) MONTH FROM DUAL";
+		int month = 0;
+		try(PreparedStatement monthStatement = _connection.prepareStatement(getMonth)) {
+			monthStatement.setString(1, bankDate);
+			ResultSet rs = monthStatement.executeQuery();
+			while(rs.next()) {
+				month = rs.getInt(1);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return -1;
+		}
+
+		if (month == 2) {
+			return 28.0;
+		} else if (month == 4 || month == 6 || month == 9 || month == 11) {
+			return 30.0;
+		} else {
+			return 31.0;
+		}
+	}
+
+	public double calculateAverage(String accountId, double initBalance, double numDays) {
+		// repeat process for tids_from and when tids_to = tids_from? then add all together?
+		// also need to subtract last amount of days (from end of month to whenever last transaction occurs) and use that to calculate avg
+		ArrayList<String> tids_to = new ArrayList<String>();
+
+		String getTidsTo = "SELECT I.tid FROM Involves I WHERE I.aid_to = ? AND I.aid_to <> I.aid_from";
+		try(PreparedStatement tidToStatement = _connection.prepareStatement(getTidsTo)) {
+			tidToStatement.setString(1, accountId);
+			ResultSet rs = tidToStatement.executeQuery();
+			while(rs.next()) {
+				tids_to.add(rs.getString("tid"));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return -1.0;
+		}
+
+		System.out.println(tids_to);
+
+		ArrayList<String> tids_from = new ArrayList<String>();
+
+		String getTidsFrom = "SELECT I.tid FROM Involves I WHERE I.aid_from = ? AND I.aid_to <> I.aid_from";
+		try(PreparedStatement tidFromStatement = _connection.prepareStatement(getTidsFrom)) {
+			tidFromStatement.setString(1, accountId);
+			ResultSet rs2 = tidFromStatement.executeQuery();
+			while(rs2.next()) {
+				tids_from.add(rs2.getString("tid"));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return -1.0;
+		}
+
+		System.out.println(tids_from);
+
+		ArrayList<String> tids = new ArrayList<String>();
+
+		String getTids = "SELECT I.tid FROM Involves I WHERE I.aid_to = ? AND I.aid_to = I.aid_from";
+		try(PreparedStatement tidStatement = _connection.prepareStatement(getTids)) {
+			tidStatement.setString(1, accountId);
+			ResultSet rs3 = tidStatement.executeQuery();
+			while(rs3.next()) {
+				tids.add(rs3.getString("tid"));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return -1.0;
+		}
+
+		System.out.println(tids);
+
+		double avg_daily_balance = 0;
+		double tempBalance = initBalance;
+
+		for(int i = 0; i < tids_to.size(); i++) {
+			int day = 0;
+			String getDay = "SELECT T.d FROM Transactions T WHERE T.tid = ?";
+			try(PreparedStatement dayStatement = _connection.prepareStatement(getDay)) {
+				dayStatement.setString(1, tids_to.get(i));
+				ResultSet rs_to = dayStatement.executeQuery();
+				while(rs_to.next()) {
+					Date d = rs_to.getDate("d");
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(d);
+					day = cal.get(Calendar.DAY_OF_MONTH);
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return -1.0;
+			}
+
+			double amount = 0;
+			String getAmount = "SELECT T.amount FROM Transactions T WHERE T.tid = ?";
+			try(PreparedStatement amtStatement = _connection.prepareStatement(getAmount)) {
+				amtStatement.setString(1, tids_to.get(i));
+				ResultSet rs_to2 = amtStatement.executeQuery();
+				while(rs_to2.next()) {
+					amount = rs_to2.getDouble("amount");
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return -1.0;
+			}
+			tempBalance = tempBalance + amount;
+
+			double temp = (tempBalance*((day-1)/numDays));
+			System.out.println(Double.toString(temp));
+			avg_daily_balance = avg_daily_balance + (tempBalance*((day-1)/numDays));
+		}
+		System.out.println(avg_daily_balance);
+
+		for(int i = 0; i < tids_from.size(); i++) {
+			int day = 0;
+			String getDay = "SELECT T.d FROM Transactions T WHERE T.tid = ?";
+			try(PreparedStatement dayStatement = _connection.prepareStatement(getDay)) {
+				dayStatement.setString(1, tids_from.get(i));
+				ResultSet rs_from = dayStatement.executeQuery();
+				while(rs_from.next()) {
+					Date d = rs_from.getDate("d");
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(d);
+					day = cal.get(Calendar.DAY_OF_MONTH);
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return -1.0;
+			}
+
+			double amount = 0;
+			String getAmount = "SELECT T.amount FROM Transactions T WHERE T.tid = ?";
+			try(PreparedStatement amtStatement = _connection.prepareStatement(getAmount)) {
+				amtStatement.setString(1, tids_from.get(i));
+				ResultSet rs_from2 = amtStatement.executeQuery();
+				while(rs_from2.next()) {
+					amount = rs_from2.getDouble("amount");
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return -1.0;
+			}
+			tempBalance = tempBalance - amount;
+
+			double temp = (tempBalance*((day-1)/numDays));
+			System.out.println(Double.toString(temp));
+			avg_daily_balance = avg_daily_balance + (tempBalance*((day-1)/numDays));
+		}
+
+		System.out.println(avg_daily_balance);
+
+		for(int i = 0; i < tids.size(); i++) {
+			int day = 0;
+			String getDay = "SELECT T.d FROM Transactions T WHERE T.tid = ?";
+			try(PreparedStatement dayStatement = _connection.prepareStatement(getDay)) {
+				dayStatement.setString(1, tids.get(i));
+				ResultSet rs_tid = dayStatement.executeQuery();
+				while(rs_tid.next()) {
+					Date d = rs_tid.getDate("d");
+					Calendar cal = Calendar.getInstance();
+					cal.setTime(d);
+					day = cal.get(Calendar.DAY_OF_MONTH);
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return -1.0;
+			}
+
+			double amount = 0;
+			String getAmount = "SELECT T.amount FROM Transactions T WHERE T.tid = ?";
+			try(PreparedStatement amtStatement = _connection.prepareStatement(getAmount)) {
+				amtStatement.setString(1, tids.get(i));
+				ResultSet rs_tid2 = amtStatement.executeQuery();
+				while(rs_tid2.next()) {
+					amount = rs_tid2.getDouble("amount");
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return -1.0;
+			}
+			tempBalance = tempBalance - amount;
+
+			double temp = (tempBalance*((day-1)/numDays));
+			System.out.println(Double.toString(temp));
+			avg_daily_balance = avg_daily_balance + (tempBalance*((day-1)/numDays));
+		}
+
+		System.out.println(avg_daily_balance);
+
+		return avg_daily_balance;
+	}
+
 	public String accrueInterest(String accountId) {
+		// NEED TO CHECK THAT ACCOUNT ISN'T CLOSED 
 		// can only happen at end of month
+		// need to use involves to retrieve transaction IDs where the account is involved
+		// then for each transaction ID get the date and amount
+		// then for the account get initial balance and do the math
+		// need to get number of days for the month
+		// ALSO NEED TO KNOW WHETHER YOU'RE ADDING OR SUBTRACTING????
+			// NEED TO DISTINGUISH IF TO OR FROM FOR THE MULTIPLE ACCOUNT ONES???
+			// Find TIDs whenever the account is a to (and to != from) = +
+			// Find TIDs whenver the account is a from (and to != from) = -
 		boolean checkType = isCheckingOrSavings(accountId);
 		
 		if (checkType == false) {
 			System.out.println("The involved accounts must be a savings/checking account.");
 			//return "1 " + oldBalance + " " + newBalance; 
 		}
+
+		double numDays = getNumDays();
+
+		double initBalance = 0;
+
+		String getInitial = "SELECT A.init_balance FROM Accounts A WHERE A.aid = ?";
+		try(PreparedStatement initStatement = _connection.prepareStatement(getInitial)) {
+			initStatement.setString(1, accountId);
+			ResultSet rs_init = initStatement.executeQuery();
+			while(rs_init.next()) {
+				initBalance = rs_init.getDouble(1);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		double avg_daily_balance = calculateAverage(accountId, initBalance, numDays);
+
 		return "0";
 	}
 
@@ -1237,11 +1513,10 @@ public class App implements Testable
 	}
 
 	public boolean verifyPIN(String pin) {
-		// Implement encryption and check
 		String encrypted = encrypt(pin);
 		String userPin = "";
 
-		String checkPin = "SELECT C.pin FROM Customers C WHERE C.tax_Id = ?";
+		String checkPin = "SELECT C.pin FROM Customers C WHERE C.tax_id = ?";
 		try(PreparedStatement statement = _connection.prepareStatement(checkPin)) {
 			statement.setString(1, this.taxId);
 			ResultSet rs = statement.executeQuery();
@@ -1261,7 +1536,6 @@ public class App implements Testable
 	}
 
 	public void setPIN(String OldPIN, String NewPIN) {
-		// Implement encryption and push into database
 		String checkPin = "SELECT C.cid FROM Customers C WHERE C.pin = ?"; // NEED TO DISTNGUISH THE CUSTOMER bc some may have same pin
 		String tin = "";
 		String encryptedOld = encrypt(OldPIN);
