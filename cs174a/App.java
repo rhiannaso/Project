@@ -119,7 +119,7 @@ public class App implements Testable
 					System.out.println("No date set yet. Please set a date first.");
 					continue;
 				}
-				atmApp.displayUI();
+				atmApp.displayUI(s, _connection);
 			} else if (choice.equals("1")) {
 				if(checkDate() == false) {
 					System.out.println("No date set yet. Please set a date first.");
@@ -1239,15 +1239,16 @@ public class App implements Testable
 	public boolean verifyPIN(String pin) {
 		// Implement encryption and check
 		String encrypted = encrypt(pin);
+		String userPin = "";
 
-		String checkPin = "SELECT C.pin FROM Customers C WHERE C.taxId = ?";
+		String checkPin = "SELECT C.pin FROM Customers C WHERE C.tax_Id = ?";
 		try(PreparedStatement statement = _connection.prepareStatement(checkPin)) {
 			statement.setString(1, this.taxId);
 			ResultSet rs = statement.executeQuery();
 			while(rs.next()) {
-				String tin = rs.getString(1);
+				userPin = rs.getString(1);
 			}
-			if(encrypted.equals(pin)) {
+			if(encrypted.equals(userPin)) {
 				return true;
 			} else {
 				return false;
