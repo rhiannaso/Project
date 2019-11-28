@@ -1,6 +1,6 @@
-import java.util.Scanner;
+package cs174a;
 
-import cs174a.App;
+import java.util.Scanner;
 
 public class BankTeller {
     private App app;
@@ -13,15 +13,15 @@ public class BankTeller {
         Scanner s = new Scanner(System.in);
         System.out.println("Welcome to the Bank Teller Interface, through which customer accounts are managed. These are your options for action: \n");
         
-        System.out.println("0: Enter Check Transaction\n");
-        System.out.println("1: Generate Monthly Statement\n");
-        System.out.println("2: List Closed Accounts\n");
-        System.out.println("3: Generate Government Drug and Tax Evasion Report\n");
-        System.out.println("4: Generate Customer Report\n");
-        System.out.println("5: Add Interest\n");
-        System.out.println("6: Create Account\n");
-        System.out.println("7: Delete Closed Accounts and Customers\n");
-        System.out.println("8: Delete Transactions\n");
+        System.out.println("0: Enter Check Transaction");
+        System.out.println("1: Generate Monthly Statement");
+        System.out.println("2: List Closed Accounts");
+        System.out.println("3: Generate Government Drug and Tax Evasion Report");
+        System.out.println("4: Generate Customer Report");
+        System.out.println("5: Add Interest");
+        System.out.println("6: Create Account");
+        System.out.println("7: Delete Closed Accounts and Customers");
+        System.out.println("8: Delete Transactions");
         System.out.println("Enter the number associated with the action you'd like to take: ");
         String choice = s.nextLine();
 
