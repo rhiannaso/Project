@@ -120,7 +120,7 @@ public class App implements Testable
 					System.out.println("No date set yet. Please set a date first.");
 					continue;
 				}
-				atmApp.displayUI();
+				atmApp.displayUI(s, _connection);
 			} else if (choice.equals("1")) {
 				if(checkDate() == false) {
 					System.out.println("No date set yet. Please set a date first.");
