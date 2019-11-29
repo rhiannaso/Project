@@ -63,7 +63,7 @@ public class ATMApp {
                 System.out.println("\n---Transaction Options---");
                 System.out.println("0: Deposit");
                 System.out.println("1: Top-Up");
-                System.out.println("2: Make a Withdrawal");
+                System.out.println("2: Withdrawal");
                 System.out.println("3: Purchase");
                 System.out.println("4: Transfer");
                 System.out.println("5: Collect");
@@ -91,6 +91,8 @@ public class ATMApp {
                             System.out.println("Not a valid amount. Please re-enter:");
                             strAmount = s.nextLine();
                         }
+                        amount = Double.parseDouble(strAmount); 
+
                         response = app.deposit(aid, amount);
                         if(response.charAt(0) == '0'){
                             System.out.println("\nYour desposit was successful!");
@@ -117,21 +119,75 @@ public class ATMApp {
                             System.out.println("\nSuccessfully moved to pocket account!");
                         }
                         break;
-                    case "2":
-                        // TO DO: verify that this is a checking/savings account
-                        // System.out.println("Enter your account ID: ");
-                        // aid = s.nextLine();
-                        // System.out.println("Enter the amount you'd like to withdraw: ");
-                        // amount = Double.parseDouble(s.nextLine());
-                        // double initBal = app.getBalance(aid);
-                        // double finBal = initBal - amount;
-                        // app.updateBalance(finBal, aid);
-                        // break;  
-                    case "3":
-                        // TO DO: verify that this is a pocket account
+                    case "2": //withdrawal
+                        System.out.println("Enter your account ID: ");
+                        aid = s.nextLine();
+                        while(checkOwnerAccounts(aidList, aid) == false){
+                            System.out.println("Not a valid account id. Please re-enter:");
+                            aid = s.nextLine();
+                        }
+
+                        System.out.println("Enter the amount you'd like to withdraw: ");
+                        strAmount = s.nextLine();
+                        while(checkAmountInput(strAmount) == false){
+                            System.out.println("Not a valid amount. Please re-enter:");
+                            strAmount = s.nextLine();
+                        }
+                        amount = Double.parseDouble(strAmount); 
+                        
+                        response = app.withdrawal(aid, amount);
+                        if(response.charAt(0) == '0'){
+                            System.out.println("\nWithdrawal successful!");
+                        }
+                        break;  
+                    case "3": //purchase 
+                        System.out.println("Enter your pocket account ID: ");
+                        aid = s.nextLine();
+                        while(checkOwnerAccounts(aidList, aid) == false){
+                            System.out.println("Not a valid account id. Please re-enter:");
+                            aid = s.nextLine();
+                        }
+
+                        System.out.println("Enter the amount you like to spend on purchases: ");
+                        strAmount = s.nextLine();
+                        while(checkAmountInput(strAmount) == false){
+                            System.out.println("Not a valid amount. Please re-enter:");
+                            strAmount = s.nextLine();
+                        }
+
+                        response = app.purchase(aid, amount);
+                        if(response.charAt(0) == '0'){
+                            System.out.println("\nSuccessfully purchased!");
+                        }
+                        amount = Double.parseDouble(strAmount); 
                         break;
-                    case "4":
-                        // TO DO: make sure that both accounts are held by the same owners
+                    case "4": //transfer
+                        System.out.println("Enter your account ID: ");
+                        aid = s.nextLine();
+                        while(checkOwnerAccounts(aidList, aid) == false){
+                            System.out.println("Not a valid account id. Please re-enter:");
+                            aid = s.nextLine();
+                        }
+
+                        System.out.println("Enter the account ID that you would like to transfer to: ");
+                        String aid_to = s.nextLine();
+                        while(checkOwnerAccounts(aidList, aid_to) == false){
+                            System.out.println("Not a valid account id. Please re-enter:");
+                            aid_to = s.nextLine();
+                        }
+
+                        System.out.println("Enter the amount you'd like to tranfer: ");
+                        strAmount = s.nextLine();
+                        while(checkAmountInput(strAmount) == false){
+                            System.out.println("Not a valid amount. Please re-enter:");
+                            strAmount = s.nextLine();
+                        }
+                        amount = Double.parseDouble(strAmount); 
+                        
+                        response = app.transfer(aid, aid_to, amount);
+                        if(response.charAt(0) == '0'){
+                            System.out.println("\nTransfer successful!");
+                        }
                         break;
                     case "5":
 
