@@ -45,12 +45,32 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				r = app.createPocketAccount("54321", "12345", 30, "123456789");
+				r = app.createPocketAccount("54321", "12345", 100, "123456789");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "13579", 1000, "123456789", "John Smith", "100 Main St" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createPocketAccount("97531", "13579", 50, "123456789");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "55555", 1000, "555555555", "John Smith", "555 Main St" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createPocketAccount("55557", "55555", 30, "555555555");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "55556", 1000, "555555555", "John Smith", "100 Main St" );
 				System.out.println( r );
 
 				System.out.println("----------------------------");
