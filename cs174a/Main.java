@@ -240,12 +240,12 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				r = app.deleteTransactions();
+				r = app.deleteClosed();
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.deleteClosed();
+				r = app.deleteTransactions();
 				System.out.println( r );
 
 				System.out.println("----------------------------");
