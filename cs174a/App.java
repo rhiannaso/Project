@@ -231,7 +231,9 @@ public class App implements Testable
 								"tid INTEGER, " +
 								"aid_to VARCHAR(5), " +
 								"aid_from VARCHAR(5), " +
-								"PRIMARY KEY (aid_to, aid_from, tid) )";
+								"PRIMARY KEY (aid_to, aid_from, tid), " +
+								"FOREIGN KEY (tid) REFERENCES Transactions(tid) " +
+								"ON DELETE CASCADE )";
 
 		String createOwners = "CREATE TABLE Owners (" +
 								"tax_id VARCHAR(9), " +
@@ -764,6 +766,7 @@ public class App implements Testable
 				return "1 " + linkedNewBalance + " " + pocketNewBalance;
 			}
 		} else {
+			System.out.println("Amount requested is larger than the available balance.");
 			return "1 " + linkedNewBalance + " " + pocketNewBalance;
 		}
 
@@ -782,6 +785,16 @@ public class App implements Testable
 
 		if (checkType == false || checkType2 == false) {
 			System.out.println("One or more involved accounts are not pocket accounts.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+
+		String checkSameOwner = checkSameOwner(from, to);
+		if(checkSameOwner.equals("1")) {
+			System.out.println("Cannot pay money to an account with a mutual owner.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+		if(checkSameOwner.equals("-1")) {
+			System.out.println("Error in checking if accounts have a mutual owner.");
 			return "1 " + fromNewBalance + " " + toNewBalance; 
 		}
 
@@ -1014,6 +1027,7 @@ public class App implements Testable
 				return "1 " + oldBalance + " " + newBalance;
 			}
 		} else {
+			System.out.println("Amount requested is larger than the available balance.");
 			return "1 " + oldBalance + " " + newBalance;
 		}
 
@@ -1046,6 +1060,7 @@ public class App implements Testable
 				return "1 " + oldBalance + " " + newBalance;
 			}
 		} else {
+			System.out.println("Amount requested is larger than the available balance.");
 			return "1 " + oldBalance + " " + newBalance;
 		}
 
@@ -1126,6 +1141,7 @@ public class App implements Testable
 				return "1 " + fromNewBalance + " " + toNewBalance;
 			}
 		} else {
+			System.out.println("Amount requested is larger than the available balance.");
 			return "1 " + fromNewBalance + " " + toNewBalance;
 		}
 
@@ -1162,6 +1178,7 @@ public class App implements Testable
 				return "1 " + pocketNewBalance + " " + linkedNewBalance;
 			}
 		} else {
+			System.out.println("Amount requested is larger than the available balance.");
 			return "1 " + pocketNewBalance + " " + linkedNewBalance;
 		}
 
@@ -1173,7 +1190,40 @@ public class App implements Testable
 		return "0 " + pocketNewBalance + " " + linkedNewBalance;
 	}
 
-	public String wire( String from, String to, double amount, String tin )
+	public String checkSameOwner(String from, String to) {
+		String findFromOwner = "SELECT O.tax_id FROM Owners O WHERE O.aid = ?";
+		String tin = "";
+		try(PreparedStatement fromStatement = _connection.prepareStatement(findFromOwner)) {
+			fromStatement.setString(1, from);
+			ResultSet rs_from = fromStatement.executeQuery();
+			while(rs_from.next()) {
+				tin = rs_from.getString("tax_id");
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "-1";
+		}
+		String findToOwner = "SELECT O.tax_id FROM Owners O WHERE O.aid = ?";
+		try(PreparedStatement toStatement = _connection.prepareStatement(findToOwner)) {
+			toStatement.setString(1, to);
+			ResultSet rs_to = toStatement.executeQuery();
+			while(rs_to.next()) {
+				String temp = rs_to.getString("tax_id");
+				if(temp.equals(tin)) {
+					return "1";
+				}
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "-1";
+		}
+		return "0";
+
+	}
+
+	public String wire( String from, String to, double amount)
 	{
 		double fromOldBalance = 0;
 		double toOldBalance = 0;
@@ -1184,6 +1234,16 @@ public class App implements Testable
 		boolean checkOwner = isOwner(from);
 		if(checkOwner == false) {
 			System.out.println("Customer initiating wire is not the owner of the account.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+
+		String checkSameOwner = checkSameOwner(from, to);
+		if(checkSameOwner.equals("1")) {
+			System.out.println("Cannot wire money between accounts with a mutual owner.");
+			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+		if(checkSameOwner.equals("-1")) {
+			System.out.println("Error in checking if accounts have a mutual owner.");
 			return "1 " + fromNewBalance + " " + toNewBalance; 
 		}
 
@@ -1212,6 +1272,7 @@ public class App implements Testable
 				return "1 " + fromNewBalance + " " + toNewBalance;
 			}
 		} else {
+			System.out.println("Amount requested is larger than the available balance.");
 			return "1 " + fromNewBalance + " " + toNewBalance;
 		}
 		String check = chargeFee(from, fee);
@@ -1690,7 +1751,6 @@ public class App implements Testable
 		return "0";
 	}
 
-	// must perform before deleteClosed b/c of foreign key references 
 	public String deleteTransactions() {
 		boolean isEnd = checkEndOfMonth();
 		if(isEnd == false) {
@@ -1698,7 +1758,6 @@ public class App implements Testable
 			return "1";
 		}
 		try(Statement infoStatement = _connection.createStatement()) {
-			infoStatement.executeUpdate("DELETE FROM Involves");
 			infoStatement.executeUpdate("DELETE FROM Transactions");
 		} catch ( SQLException e )
 		{
@@ -1769,7 +1828,7 @@ public class App implements Testable
 			while(rs.next()) {
 				pin = rs.getString(1);
 			}
-			if(pin.equals(OldPIN) == false) {
+			if(pin.equals(encryptedOld) == false) {
 				System.out.println("Incorrect old PIN.");
 				return;
 			}
