@@ -40,17 +40,72 @@ public class Main
 				// Example tests.  We'll overwrite your Main.main() function with our final tests.
 
 				// Another example test.
-				r = app.setDate(2019, 11, 27);
+				r = app.setDate(2019, 11, 30);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "12345", 1234.56, "987654321", "Im YoungMing", "Known" );
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 1000, "344151573", "Joe Pepsi", "3210 State St" );
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "99999", 1111.11, "999999999", "John Smith", "123 Main" );
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "54321", 21000, "212431965", "Hurryson Ford", "678 State St" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "12121", 1200, "207843218", "David Copperfill", "1357 State St" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "41725", 15000, "201674933", "George Brush", "5346 Foothill Av" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "76543", 8456, "212116070", "Li Kung", "2 People's Rd Beijing" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "93156", 2000000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "43942", 1289, "361721022", "Alfred Hitchcock", "6667 El Colegio #40" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "29107", 34000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "19023", 2300, "412231856", "Cindy Laugher", "7000 Hollister" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCustomer("43942", "400651982", "Pit Wilson", "911 State St");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createPocketAccount("60413", "43942", 20, "400651982");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "32156", 1000, "188212217", "Michael Jordon", "3852 Court Rd" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createOwners("212116070", "29107");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -59,23 +114,14 @@ public class Main
 				System.out.println( r );
 
 				System.out.println("----------------------------");
-
-				r = app.createPocketAccount("54321", "12345", 1229.552, "987654321");
+				
+				r = app.showBalance("19023");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "67890", 1500.75, "123456789", "Tester McTesting", "6565 Segovia" );
-				System.out.println( r );
-
-				System.out.println("----------------------------");
-
-				r = app.createPocketAccount("09876", "67890", 100.00, "123456789");
-				System.out.println( r );
-
-				System.out.println("----------------------------");
-
-				r = app.showBalance("67890");
+				// WHY IS IT NOT REGISTERING
+				r = app.createPocketAccount("43947", "29107", 30, "212116070");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -90,12 +136,56 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				r = app.createPocketAccount("99999", "67890", 1000.55, "987654321");
+				r = app.createCustomer("54321", "122219876", "Elizabeth Sailor", "4321 State St");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.payFriend("67890", "23456", 500.25);
+				r = app.createCheckingSavingsAccount(AccountType.SAVINGS, "12345", 5000, "122219876", "Elizabeth Sailor", "4321 State St");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.withdrawal("54321", 3000);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail
+				r = app.purchase("54321", 3000);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.purchase("43947", 10);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				app.setTaxId("212116070");
+
+				r = app.wire("76543", "12345", 7309.80, "212116070");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.showBalance("76543");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.transfer("76543", "29107", 999.99);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.payFriend("43947", "60413", 5);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail
+				r = app.payFriend("43942", "17431", 289);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -105,17 +195,25 @@ public class Main
 
 				System.out.println("----------------------------");
 
+				r = app.writeCheck("93156", 1000000);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.showBalance("93156");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
 				r = app.setDate(10, 21, 5);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.generateCustomerReport("987654321");
+				r = app.generateCustomerReport("212116070");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
-
-				app.setTaxId("987654321");
 
 				boolean check = app.verifyPIN("1717");
 				System.out.println( check );
@@ -124,6 +222,36 @@ public class Main
 
 				double num = app.getNumDays();
 				System.out.println(Double.toString(num));
+
+				System.out.println("----------------------------");
+
+				boolean end = app.checkEndOfMonth();
+				System.out.println(end);
+
+				System.out.println("----------------------------");
+
+				r = app.setNewInterest(2.5, "student");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.withdrawal("19023", 2300);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.deleteTransactions();
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.deleteClosed();
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.generateCustomerReport("212116070");
+				System.out.println( r );
 
 				System.out.println("----------------------------");
 
