@@ -154,12 +154,12 @@ public class ATMApp {
                             System.out.println("Not a valid amount. Please re-enter:");
                             strAmount = s.nextLine();
                         }
+                        amount = Double.parseDouble(strAmount); 
 
                         response = app.purchase(aid, amount);
                         if(response.charAt(0) == '0'){
                             System.out.println("\nSuccessfully purchased!");
                         }
-                        amount = Double.parseDouble(strAmount); 
                         break;
                     case "4": //transfer
                         System.out.println("Enter your account ID: ");
