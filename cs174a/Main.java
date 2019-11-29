@@ -27,13 +27,33 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			Scanner s = new Scanner(System.in);
-			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n-----------------");
+			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Example Test (Long)\n-----------------");
 			String input = s.nextLine();
 			if(input.equals("0")){
 				app.dropTables();
 				app.createTables();
 			} else if (input.equals("1")){
-			 	app.setUpUI();
+				app.setUpUI();
+			} else if (input.equals("2")){
+				r = app.setDate(2019, 11, 30);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "12345", 1000, "123456789", "John Smith", "100 Main St" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createPocketAccount("54321", "12345", 30, "123456789");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "13579", 1000, "123456789", "John Smith", "100 Main St" );
+				System.out.println( r );
+
+				System.out.println("----------------------------");
 			} else {
 				//app.exampleAccessToDB();                // Example on how to connect to the DB.
 
