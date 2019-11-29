@@ -77,7 +77,7 @@ public class ATMApp {
                 String aid = "", response = "", strAmount = "";
                 double amount = 0;
                 switch(choice) {
-                    case "0": //desposit
+                    case "0": //deposit
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -95,10 +95,10 @@ public class ATMApp {
 
                         response = app.deposit(aid, amount);
                         if(response.charAt(0) == '0'){
-                            System.out.println("\nYour desposit was successful!");
+                            System.out.println("\nYour deposit was successful!");
                         }
                         break;
-                    case "1": //top up (problems: if value entered greater than amount in checking/savings, nothing happens, maybe error message would help)
+                    case "1": //top up 
                         System.out.println("Enter your pocket account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -119,7 +119,7 @@ public class ATMApp {
                             System.out.println("\nSuccessfully moved to pocket account!");
                         }
                         break;
-                    case "2": //withdrawal (problems: if value entered greater than amount in checking/savings, nothing happens, maybe error message would help)
+                    case "2": //withdrawal 
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -140,7 +140,7 @@ public class ATMApp {
                             System.out.println("\nWithdrawal successful!");
                         }
                         break;  
-                    case "3": //purchase (problems: if value entered greater than amount in pocket, nothing happens, maybe error message would help)
+                    case "3": //purchase 
                         System.out.println("Enter your pocket account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -161,7 +161,7 @@ public class ATMApp {
                             System.out.println("\nSuccessfully purchased!");
                         }
                         break;
-                    case "4": //transfer (problems: if value entered greater than amount check/save, nothing happens/bad output, maybe error message would help)
+                    case "4": //transfer 
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -189,7 +189,7 @@ public class ATMApp {
                             System.out.println("\nTransfer successful!");
                         }
                         break;
-                    case "5": //collect (problems: if value entered greater than amount pocket, nothing happens/bad output, maybe error message would help)
+                    case "5": //collect 
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -218,7 +218,7 @@ public class ATMApp {
                         }
 
                         break;
-                    case "6": //wire (problems: what is the fourth field in wire()? | Can wire to own accounts? | ^)
+                    case "6": //wire 
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -237,12 +237,12 @@ public class ATMApp {
                         }
                         amount = Double.parseDouble(strAmount); 
 
-                        response = app.wire(aid, aid_wire, amount, /* some string here */ "");
+                        response = app.wire(aid, aid_wire, amount);
                         if(response.charAt(0) == '0'){
                             System.out.println("\nMoney wire successful!");
                         }
                         break;
-                    case "7": //payfriend (problems: ^^ | Can pay to another one of your own accounts?)
+                    case "7": //payfriend 
                         System.out.println("Enter your pocket account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -266,7 +266,7 @@ public class ATMApp {
                             System.out.println("\nPaid succesfully!");
                         }
                         break;
-                    case "8": //setPin (problems: incorrect old pin even when correct pin entered)
+                    case "8": //setPin 
                         System.out.println("Setting a new PIN");
                         System.out.print("Enter your old PIN: ");
                         String oldPin = s.nextLine();

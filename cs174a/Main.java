@@ -160,7 +160,6 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				// WHY IS IT NOT REGISTERING
 				r = app.createPocketAccount("43947", "29107", 30, "212116070");
 				System.out.println( r );
 
@@ -204,7 +203,13 @@ public class Main
 
 				app.setTaxId("212116070");
 
-				r = app.wire("76543", "12345", 7309.80, "212116070");
+				r = app.wire("76543", "12345", 7309.80);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail
+				r = app.wire("76543", "29107", 5);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -220,6 +225,12 @@ public class Main
 				System.out.println("----------------------------");
 
 				r = app.payFriend("43947", "60413", 5);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail
+				r = app.payFriend("43947", "43947", 5);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -280,7 +291,8 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				r = app.deleteTransactions();
+				// should fail
+				r = app.withdrawal("29107", 1000000);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -290,10 +302,17 @@ public class Main
 
 				System.out.println("----------------------------");
 
+				r = app.deleteTransactions();
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
 				r = app.generateCustomerReport("212116070");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
+
+				app.setPIN("1717", "9999");
 
 				//double num2 = app.calculateAverage("67890", 1500.75, 30.0);
 				//System.out.println(Double.toString(num2));
