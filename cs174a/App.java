@@ -111,7 +111,7 @@ public class App implements Testable
 
 		while(choice.equals("3") == false) {
 			System.out.println("Welcome to your virtual account management system.\n");
-			System.out.println("0: ATM App\n1: Bank Teller\n2: Set Date\n3: Exit");
+			System.out.println("0: ATM App\n1: Bank Teller\n2: Set Date\n3: Set New Interest Rate\n4: Exit");
 			System.out.println("Enter the number associated with the action you'd like to take: ");
 			choice = s.nextLine();
 			
@@ -136,6 +136,31 @@ public class App implements Testable
 				System.out.println("Enter the day: ");
 				String day = s.nextLine();
 				setDate(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day));
+			} else if (choice.equals("3")){
+				System.out.println("Setting a New Interest Rate\n");
+				System.out.println("Enter the new rate: ");
+				String rate = s.nextLine();
+				double interest = Double.parseDouble(rate);
+				System.out.println("Which type of account would you like to set the new interest rate for?");
+				System.out.println("0: Student Checking\n1: Interest Checking\n2: Savings\n3: Pocket");
+				String accChoice = s.nextLine();
+				switch(accChoice) {
+					case "0":
+						setNewInterest(interest, "student");
+						break;
+					case "1":
+						setNewInterest(interest, "interest");
+						break;
+					case "2":
+						setNewInterest(interest, "savings");
+						break;
+					case "3":
+						setNewInterest(interest, "pocket");
+						break;
+					default:
+						System.out.println("Not a valid choice.");
+						break;
+				}
 			} else {
 				break;
 			}
@@ -206,26 +231,34 @@ public class App implements Testable
 								"tid INTEGER, " +
 								"aid_to VARCHAR(5), " +
 								"aid_from VARCHAR(5), " +
-								"PRIMARY KEY (aid_to, aid_from, tid) )"; 
+								"PRIMARY KEY (aid_to, aid_from, tid) )";
 
 		String createOwners = "CREATE TABLE Owners (" +
 								"tax_id VARCHAR(9), " +
 								"aid VARCHAR(5), " +
 								"PRIMARY KEY (tax_id, aid), " +
-								"FOREIGN KEY (tax_id) REFERENCES Customers(tax_id), " +
-								"FOREIGN KEY (aid) REFERENCES Accounts(aid) )"; 
+								"FOREIGN KEY (tax_id) REFERENCES Customers(tax_id) " +
+								"ON DELETE CASCADE, " +
+								"FOREIGN KEY (aid) REFERENCES Accounts(aid) " +
+								"ON DELETE CASCADE )"; 
 
 		String createPrimary = "CREATE TABLE Primary (" +
 								"tax_id VARCHAR(9), " +
 								"aid VARCHAR(5), " +
 								"PRIMARY KEY (tax_id, aid), " +
-								"FOREIGN KEY (tax_id) REFERENCES Customers(tax_id), " +
-								"FOREIGN KEY (aid) REFERENCES Accounts(aid) )"; 
+								"FOREIGN KEY (aid) REFERENCES Accounts(aid) " +
+								"ON DELETE CASCADE, " +
+								"FOREIGN KEY (tax_id) REFERENCES Customers(tax_id) " +
+								"ON DELETE CASCADE )"; 
 
 		String createLinkedTo = "CREATE TABLE LinkedTo (" +
 								"aid_main VARCHAR(5), " +
 								"aid_pocket VARCHAR(5), " +
-								"PRIMARY KEY (aid_main, aid_pocket) )"; 
+								"PRIMARY KEY (aid_main, aid_pocket), " +
+								"FOREIGN KEY (aid_main) REFERENCES Accounts(aid) " +
+								"ON DELETE CASCADE, " +
+								"FOREIGN KEY (aid_pocket) REFERENCES Accounts(aid) " +
+								"ON DELETE CASCADE )";
 
 		String createSequence = "CREATE SEQUENCE transId_seq "+
 								"START WITH 1 " +
@@ -359,7 +392,17 @@ public class App implements Testable
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
 
-			createOwners(tin, id);
+			// ONLY DO THIS IF NOT NEW CUSTOMER (or else will be double createOwners in createCustomer and here)
+			String checkOwnership = checkIfOwnerExists(tin, id);
+			if(checkOwnership.equals("0")) {
+				String check = createOwners(tin, id);
+				if(check.equals("1")) {
+					return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+				}
+			} 
+			if(checkOwnership.equals("-1")) {
+				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
+			} 
 
 			createPrimary(tin, id);
 
@@ -368,6 +411,28 @@ public class App implements Testable
 				return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 			}
 			return "0 " + id + " " + accountType + " " + initialBalance + " " + tin;
+		}
+	}
+
+	public String checkIfOwnerExists(String tin, String id) {
+		String findOwner = "SELECT * FROM Owners O WHERE O.tax_id = ? AND O.aid = ?";
+		try( PreparedStatement prepStatement = _connection.prepareStatement(findOwner))
+		{
+			prepStatement.setString(1, tin);
+			prepStatement.setString(2, id);
+			ResultSet rs = prepStatement.executeQuery();
+			// if owner doesn't exist yet
+			if(rs.next() == false) {
+				return "0";
+			} else {
+				return "1";
+			}
+		}
+		catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Error with checking owner existence.");
+			return "-1";
 		}
 	}
 
@@ -396,16 +461,16 @@ public class App implements Testable
 	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin )
 	{
 		// Check if customer already has the savings or checkings account
+		ArrayList<String> ownedAccs = new ArrayList<String>();
 		String findCustomer = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
 		try( PreparedStatement prepStatement3 = _connection.prepareStatement(findCustomer))
 		{
 			prepStatement3.setString(1, tin);
-			String accId = "";
 			ResultSet rs = prepStatement3.executeQuery();
-			while(rs.next()) {
-				accId = rs.getString(1);
+			while(rs.next()) { 
+				ownedAccs.add(rs.getString(1));
 			}
-			if (accId.equals(linkedId) == false) {
+			if (ownedAccs.contains(linkedId) == false) {
 				System.out.println("The given account is not owned by the customer with the given ID.");
 				return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 			}
@@ -511,10 +576,15 @@ public class App implements Testable
 			return "1";
 		}
 
+		String check = createOwners(tin, accountId);
+		if(check.equals("1")) {
+			return "1";
+		}
+
 		return "0";
 	}
 
-	public void createOwners(String tin, String accountId) {
+	public String createOwners(String tin, String accountId) {
 		String createOwners = "INSERT INTO Owners(tax_id, aid) " +
 							"VALUES (?, ?) ";
 		try( PreparedStatement prepStatement2 = _connection.prepareStatement(createOwners))
@@ -522,11 +592,13 @@ public class App implements Testable
 			prepStatement2.setString(1, tin);
 			prepStatement2.setString(2, accountId);
 			prepStatement2.executeUpdate();
+			return "0";
 		}
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
 			System.out.println("Could not create owner.");
+			return "1";
 		}
 	}
 
@@ -1034,12 +1106,18 @@ public class App implements Testable
 		fromOldBalance = getBalance(from);
 		toOldBalance = getBalance(to);
 
+		System.out.println(fromOldBalance);
+		System.out.println(toOldBalance);
+
 		if(Double.compare(fromOldBalance, -1.00) == 0 || Double.compare(toOldBalance, -1.00) == 0) {
 			return "1 " + fromNewBalance + " " + toNewBalance;
 		}
 
 		fromNewBalance = fromOldBalance - amount;
 		toNewBalance = toOldBalance + amount;
+
+		System.out.println(fromNewBalance);
+		System.out.println(toNewBalance);
 
 		if(Double.compare(fromNewBalance, 0.00) >= 0 && Double.compare(toNewBalance, 0.00) >= 0) {
 			String isValid = createTransaction("transfer", amount, 0.00, 0, 0.00, to, from, toNewBalance, fromNewBalance);
@@ -1487,15 +1565,160 @@ public class App implements Testable
 		return "0";
 	}
 
+	public boolean checkEndOfMonth() {
+		double numDays = getNumDays();
+		String bankDate = getDateInfo();
+		String getDay = "SELECT EXTRACT( DAY FROM TO_DATE(?, \'YYYY-MM-DD\') ) DAY FROM DUAL";
+		int day = 0;
+		try(PreparedStatement monthStatement = _connection.prepareStatement(getDay)) {
+			monthStatement.setString(1, bankDate);
+			ResultSet rs = monthStatement.executeQuery();
+			while(rs.next()) {
+				day = rs.getInt(1);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+		}
+		if(numDays == day) { // need to adjust to same type
+			return true;
+		} else {
+			return false;
+		}
+	}
+
+	public String makeQueryList(ArrayList<String> arr) {
+		String list = "(";
+		for(int i = 0; i < arr.size(); i++) {
+			list = list + "\'" + arr.get(i) + "\',";
+		}
+		if(list.length() > 1) {
+			list = list.substring(0, list.length()-1);
+		}
+		list = list + ")";
+		return list;
+	}
+
+	// NEED TO DELETE POCKET ACCOUNTS TOO 
 	public String deleteClosed() {
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot delete closed accounts and customers until the end of the month");
+			return "1";
+		}
+
+		ArrayList<String> closedAccs = new ArrayList<String>();
+
+		try(Statement getInactive = _connection.createStatement()) {
+			ResultSet rs = getInactive.executeQuery("SELECT A.aid FROM Accounts A WHERE A.active = 0");
+			while(rs.next()) {
+				closedAccs.add(rs.getString(1));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		ArrayList<String> ownClosed = new ArrayList<String>();
+
+		String tempAcc = makeQueryList(closedAccs);
+		String findOwners = "SELECT O.tax_id FROM Owners O WHERE O.aid IN "+tempAcc;
+
+		try(Statement getOwners = _connection.createStatement()) {
+			ResultSet rs2 = getOwners.executeQuery(findOwners);
+			while(rs2.next()) {
+				ownClosed.add(rs2.getString(1));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		String ownList = makeQueryList(ownClosed);
+
+		String deletion = "DELETE FROM Owners O WHERE O.tax_id IN "+ownList+" AND O.aid IN "+tempAcc;
+
+		try(Statement delOwners = _connection.createStatement()) {
+			delOwners.executeUpdate(deletion);
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Error deleting owner.");
+			return "1";
+		}
+
+		String checkIfOwnsStill = "SELECT O.tax_id FROM Owners O WHERE O.tax_id IN "+ownList;
+
+		try(Statement stillOwners = _connection.createStatement()) {
+			ResultSet rs3 = stillOwners.executeQuery(checkIfOwnsStill);
+			while(rs3.next()) {
+				String temp = rs3.getString(1);
+				ownClosed.remove(temp);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		if(ownClosed.size() > 0) {
+			ownList = makeQueryList(ownClosed);
+			String deletion_cust = "DELETE FROM Customers C WHERE C.tax_id IN "+ownList;
+
+			try(Statement delCustomers = _connection.createStatement()) {
+				delCustomers.executeUpdate(deletion_cust);
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				System.out.println("Error deleting customer.");
+				return "1";
+			}
+		}
+
+		String deletion_acct= "DELETE FROM Accounts A WHERE A.active = 0";
+
+		try(Statement delAccounts = _connection.createStatement()) {
+			delAccounts.executeUpdate(deletion_acct);
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Error deleting owner.");
+			return "1";
+		}
 		return "0";
 	}
 
+	// must perform before deleteClosed b/c of foreign key references 
 	public String deleteTransactions() {
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot delete transactions until the end of the month");
+			return "1";
+		}
+		try(Statement infoStatement = _connection.createStatement()) {
+			infoStatement.executeUpdate("DELETE FROM Involves");
+			infoStatement.executeUpdate("DELETE FROM Transactions");
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
 		return "0";
 	}
 
-	public String setNewInterest() {
+	public String setNewInterest(double interest, String type) {
+		String updAccounts = "UPDATE Accounts SET interest = ? WHERE type = ?";
+		try(PreparedStatement interestStatement = _connection.prepareStatement(updAccounts)) {
+			interestStatement.setDouble(1, interest);
+			interestStatement.setString(2, type);
+			interestStatement.executeUpdate();
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
 		return "0";
 	}
 
@@ -1536,15 +1759,19 @@ public class App implements Testable
 	}
 
 	public void setPIN(String OldPIN, String NewPIN) {
-		String checkPin = "SELECT C.cid FROM Customers C WHERE C.pin = ?"; // NEED TO DISTNGUISH THE CUSTOMER bc some may have same pin
-		String tin = "";
+		String checkPin = "SELECT C.pin FROM Customers C WHERE C.tax_id = ?"; // NEED TO DISTNGUISH THE CUSTOMER bc some may have same pin
+		String pin = "";
 		String encryptedOld = encrypt(OldPIN);
 
 		try(PreparedStatement statement = _connection.prepareStatement(checkPin)) {
-			statement.setString(1, encryptedOld);
+			statement.setString(1, this.taxId);
 			ResultSet rs = statement.executeQuery();
 			while(rs.next()) {
-				tin = rs.getString(1);
+				pin = rs.getString(1);
+			}
+			if(pin.equals(OldPIN) == false) {
+				System.out.println("Incorrect old PIN.");
+				return;
 			}
 		} catch ( SQLException e )
 		{
@@ -1557,11 +1784,8 @@ public class App implements Testable
 		String setNewPin = "UPDATE Customers SET pin = ? WHERE tax_id = ?";
 		try(PreparedStatement statement2 = _connection.prepareStatement(setNewPin)) {
 			statement2.setString(1, encryptedNew);
-			statement2.setString(2, tin);
-			ResultSet rs2 = statement2.executeQuery();
-			while(rs2.next()) {
-				tin = rs2.getString(1);
-			}
+			statement2.setString(2, this.taxId);
+			statement2.executeUpdate();
 		} catch ( SQLException e )
 		{
 			System.err.println( e.getMessage() );
