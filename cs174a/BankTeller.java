@@ -1,5 +1,6 @@
 package cs174a;
 
+import cs174a.Testable.*;
 import java.util.Scanner;
 
 public class BankTeller {
@@ -9,55 +10,127 @@ public class BankTeller {
         this.app = app;
     }
 
-    public void displayUI() {
-        Scanner s = new Scanner(System.in);
-        System.out.println("Welcome to the Bank Teller Interface, through which customer accounts are managed. These are your options for action: \n");
+    public void displayUI(Scanner s) {
+        System.out.println("\nWelcome to the Bank Teller Interface, through which customer accounts are managed. These are your options for action:");
         
-        System.out.println("0: Enter Check Transaction");
-        System.out.println("1: Generate Monthly Statement");
-        System.out.println("2: List Closed Accounts");
-        System.out.println("3: Generate Government Drug and Tax Evasion Report");
-        System.out.println("4: Generate Customer Report");
-        System.out.println("5: Add Interest");
-        System.out.println("6: Create Account");
-        System.out.println("7: Delete Closed Accounts and Customers");
-        System.out.println("8: Delete Transactions");
-        System.out.println("Enter the number associated with the action you'd like to take: ");
-        String choice = s.nextLine();
+        String choice = "";
+        while(choice.equals("9") == false){
+            System.out.println("\n---Teller Options---");
+            System.out.println("0: Enter Check Transaction");
+            System.out.println("1: Generate Monthly Statement");
+            System.out.println("2: List Closed Accounts");
+            System.out.println("3: Generate Government Drug and Tax Evasion Report");
+            System.out.println("4: Generate Customer Report");
+            System.out.println("5: Add Interest");
+            System.out.println("6: Create Account");
+            System.out.println("7: Delete Closed Accounts and Customers");
+            System.out.println("8: Delete Transactions");
+            System.out.println("9: Exit Teller Interface");
+            System.out.println("Enter the number associated with the action you'd like to take: ");
+            choice = s.nextLine();
 
-        switch(choice) {
-            case "0":
-                
-                break;
-            case "1":
+            String tax_id = "";
+            switch(choice) {
+                case "0": //Enter Check Transaction
+                    //writecheck(aid, amount)
+                    break;
+                case "1": //Generate Monthly Statement
+                    //generateMontly()
+                    break;
+                case "2": //List Closed Accounts (if empty, generate appropriate output)
+                    app.listClosedAccounts();
+                    break;  
+                case "3": //Generate Government Drug and Tax Evasion Report
+                    //generateDTER()
+                    break;
+                case "4": //Generate Customer Report
+                    System.out.println("Enter the tax ID you would like to generate a report for: ");
+                    String tin = s.nextLine();
+                    app.generateCustomerReport(tin);
+                    break;
+                case "5": //Add Interest
+                    //addInterest()
+                    break;
+                case "6": //Create Account
+                    System.out.println("\nCreating account for:\n0: Returning Customer\n1: New Customer");
+                    String createCus = s.nextLine();
+                    while(createCus.equals("0") == false && createCus.equals("1") == false){
+                        System.out.println("Not a valid option. Enter 0 for returning customers or 1 for new customers:");
+                        createCus = s.nextLine();
+                    }
+                    String createAcc = "";
+                    if(createCus.equals("0")) { //Returning Customer
+                        System.out.println("\nWhat type of account would you like to create?");
+                        System.out.println("0: Checking (Interest)\n1: Checking (Student)\n2: Savings\n3: Pocket\n4: Cancel");
+                        createAcc = s.nextLine();
+                        while(Integer.parseInt(createAcc) > 4 || Integer.parseInt(createAcc) < 0){
+                            System.out.println("Not a valid Option. Please try again.");
+                            System.out.println("0: Checking (Interest)\n1: Checking (Student)\n2: Savings\n3: Pocket\n4: Cancel");
+                            createAcc = s.nextLine();
+                        }
 
-                break;
-            case "2":
+                        if(createAcc.equals("4")){ //Cancel
+                            break;
+                        }
 
-                break;  
-            case "3":
+                        System.out.println("What is the tax id associated with the new account?");
+                        tax_id = s.nextLine();
+                        System.out.println("Give the newly created account a 5-digit id:");
+                        String aid = s.nextLine();
 
-                break;
-            case "4":
+                        if(createAcc.equals("0")){ //Interest Checking
+                            System.out.println("What is the name associated with the new account?");
+                            String name = s.nextLine();
+                            System.out.println("What is the address of the customer associated with the new account?");
+                            String address = s.nextLine();
+                            String r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING , aid, 1000, tax_id, name, address);
+                            if(r.charAt(0) == '0'){
+                                System.out.println("Checking account created successfully!");
+                            }
+                        } else if (createAcc.equals("1")){ //Student Checking
+                            System.out.println("What is the name associated with the new account?");
+                            String name = s.nextLine();
+                            System.out.println("What is the address of the customer associated with the new account?");
+                            String address = s.nextLine();
+                            String r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING , aid, 1000, tax_id, name, address);
+                            if(r.charAt(0) == '0'){
+                                System.out.println("Checking account created successfully!");
+                            }
+                        } else if (createAcc.equals("2")){ //Savings
+                            System.out.println("What is the name associated with the new account?");
+                            String name = s.nextLine();
+                            System.out.println("What is the address of the customer associated with the new account?");
+                            String address = s.nextLine();
+                            String r = app.createCheckingSavingsAccount( AccountType.SAVINGS , aid, 1000, tax_id, name, address);
+                            if(r.charAt(0) == '0'){
+                                System.out.println("Savings account created successfully!");
+                            }
+                        } else if (createAcc.equals("3")){ //Pocket
+                            System.out.println("What is the checking/savings account that the new pocket account is linked to?");
+                            String chSavAcc = s.nextLine();
+                            String r = app.createPocketAccount(aid, chSavAcc, 100, tax_id);
+                            if(r.charAt(0) == '0'){
+                                System.out.println("Pocket account created successfully!");
+                            }
+                        }
+                    }
+                    else {
 
-                break;
-            case "5":
-
-                break;
-            case "6":
-
-                break;
-            case "7":
-
-                break;
-            case "8":
-
-                break;
-            default:
-                System.out.println("Not a valid transaction number.");
-                break;
+                    }
+                    break;
+                case "7": //Delete Closed Accounts and Customers
+                    app.deleteClosed();
+                    break;
+                case "8": //Delete Transactions
+                    app.deleteTransactions();
+                    break;
+                case "9": //Exit Teller App
+                    
+                    break;
+                default:
+                    System.out.println("Not a valid transaction number.");
+                    break;
+            }
         }
-
-        s.close();
     }
 }
