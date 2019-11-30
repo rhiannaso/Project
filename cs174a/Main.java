@@ -297,6 +297,11 @@ public class Main
 
 				System.out.println("----------------------------");
 
+				r = app.writeCheck("17431", 10);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
 				r = app.deleteClosed();
 				System.out.println( r );
 

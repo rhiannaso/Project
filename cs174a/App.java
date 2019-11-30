@@ -223,7 +223,7 @@ public class App implements Testable
 									"amount DECIMAL(15,2), " +
 									"type VARCHAR(20), " +
 									"fee DECIMAL(15,2), " +
-									"check_no INTEGER, " +
+									"check_no INTEGER DEFAULT 0, " +
 									"avg_daily_balance DECIMAL(15,2), " +
 									"PRIMARY KEY (tid) )";
 
@@ -1283,11 +1283,32 @@ public class App implements Testable
 		return "0 " + fromNewBalance + " " + toNewBalance;
 	}
 
+	public int getCheckNo() {
+		int check_no = 0;
+		try (Statement getCheckNo = _connection.createStatement()) {
+			ResultSet rs = getCheckNo.executeQuery("SELECT MAX(T.check_no) FROM Transactions T");
+			while(rs.next()) {
+				check_no = rs.getInt(1);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return -1;
+		}
+		return check_no;
+	}
+
 	public String writeCheck(String accountId, double amount) {
 		double oldBalance = 0;
 		double newBalance = 0;
 		boolean shouldClose = false;
-		int check_no = 0; // FIND A WAY TO RANDOMIZE THIS AND KEEP UNIQUE
+		int check_no = getCheckNo();
+		if (check_no == -1) {
+			System.out.println("Error generating check number.");
+			return "1 " + oldBalance + " " + newBalance; 
+		}
+
+		check_no = check_no + 1;
 
 		boolean checkType = checkType(accountId, "student");
 		boolean checkType2 = checkType(accountId, "interest");
