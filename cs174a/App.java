@@ -126,7 +126,7 @@ public class App implements Testable
 					System.out.println("No date set yet. Please set a date first.");
 					continue;
 				}
-				bankTeller.displayUI();
+				bankTeller.displayUI(s);
 			} else if (choice.equals("2")){
 				System.out.println("Setting a New Date\n");
 				System.out.println("Enter the year: ");
