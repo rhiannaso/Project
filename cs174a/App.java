@@ -748,6 +748,8 @@ public class App implements Testable
 		double linkedNewBalance = 0;
 		double pocketNewBalance = 0;
 
+		// need to check if first top-up of the month for the pocket account
+
 		String getMain = "SELECT L.aid_main FROM LinkedTo L WHERE L.aid_pocket = ?";
 		try( PreparedStatement mainStatement = _connection.prepareStatement(getMain) ) {
 			mainStatement.setString(1, accountId);
@@ -1577,6 +1579,11 @@ public class App implements Testable
 			// NEED TO DISTINGUISH IF TO OR FROM FOR THE MULTIPLE ACCOUNT ONES???
 			// Find TIDs whenever the account is a to (and to != from) = +
 			// Find TIDs whenver the account is a from (and to != from) = -
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot generate monthly statements until the end of the month");
+			return "1";
+		}
 		boolean checkType = isCheckingOrSavings(accountId);
 		
 		if (checkType == false) {
