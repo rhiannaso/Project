@@ -189,7 +189,7 @@ public class ATMApp {
                             System.out.println("\nTransfer successful!");
                         }
                         break;
-                    case "5": //collect 
+                    case "5": //collect (Problems: Error with charge fee when collecting from account, might be from closed linked account)
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
@@ -253,7 +253,7 @@ public class ATMApp {
                         System.out.println("Enter the pocket account that you would like to pay to:");
                         String aid_payfriend = s.nextLine();
 
-                        System.out.println("Enter the amount you like to spend on purchases: ");
+                        System.out.println("Enter the amount you like to pay: ");
                         strAmount = s.nextLine();
                         while(checkAmountInput(strAmount) == false){
                             System.out.println("Not a valid amount. Please re-enter:");
