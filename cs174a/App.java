@@ -853,6 +853,10 @@ public class App implements Testable
 			}
 			String closedAccs = "";
 			String printClosed = "";
+			if(closedIds.size() == 0) {
+				System.out.println("No accounts are closed.");
+				return "0" + closedAccs;
+			}
 			for(int i = 0; i < closedIds.size(); i++) {
 				closedAccs = closedAccs + " " + closedIds.get(i);
 				printClosed = printClosed + closedIds.get(i) + "\n";
@@ -1795,6 +1799,8 @@ public class App implements Testable
 			return "1";
 		}
 
+		System.out.println("--- Government Drug and Tax Evasion Report ---");
+
 		for(int i = 0; i < customers.size(); i++) {
 			double sum = 0;
 
@@ -1830,8 +1836,6 @@ public class App implements Testable
 				return "1";
 			}
 
-			System.out.println(tempTransactions);
-
 			for(int j = 0; j < tempTransactions.size(); j++) {
 				String getAmt = "SELECT T.amount FROM Transactions T WHERE T.tid = ? AND (T.type = \'deposit\' OR T.type = \'transfer\')";
 				try(PreparedStatement amtStatement = _connection.prepareStatement(getAmt)) {
@@ -1862,8 +1866,6 @@ public class App implements Testable
 				return "1";
 			}
 
-			System.out.println(tempTransactions);
-
 			for(int j = 0; j < tempTransactions.size(); j++) {
 				String getAmt2 = "SELECT T.amount FROM Transactions T WHERE T.tid = ? AND T.type = \'wire\'";
 				try(PreparedStatement amtStatement2 = _connection.prepareStatement(getAmt2)) {
@@ -1888,6 +1890,13 @@ public class App implements Testable
 	}
 
 	public String generateCustomerReport(String tin) {
+		// check if valid tax ID
+		String isValid = checkCustomerExists(tin);
+		if(isValid.equals("0")) {
+			System.out.println("No customer exists with the given tax ID.");
+			return "1";
+		}
+
 		String findAccounts = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
 		ArrayList<String> accounts = new ArrayList<String>();
 		try(PreparedStatement accStatement = _connection.prepareStatement(findAccounts)) {
@@ -2077,6 +2086,7 @@ public class App implements Testable
 			System.err.println( e.getMessage() );
 			return "1";
 		}
+		System.out.println("Successfully deleted all transactions for the month.");
 		return "0";
 	}
 
