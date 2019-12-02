@@ -180,6 +180,18 @@ public class Main
 
 				System.out.println("----------------------------");
 
+				// should fail
+				r = app.createCustomer("54321", "122219876", "Elizabeth Sailor", "4321 State St");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail
+				r = app.createCustomer("00000", "987654321", "Just Testing", "4321 Testable St");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
 				r = app.createCheckingSavingsAccount(AccountType.SAVINGS, "12345", 5000, "122219876", "Elizabeth Sailor", "4321 State St");
 				System.out.println( r );
 
@@ -297,13 +309,33 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				r = app.deleteClosed();
+				r = app.writeCheck("17431", 10);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
 
-				r = app.deleteTransactions();
+				r = app.generateMonthly("212116070");
 				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.generateMonthly("209378521");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				r = app.generateDTER();
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				//r = app.deleteClosed();
+				//System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				//r = app.deleteTransactions();
+				//System.out.println( r );
 
 				System.out.println("----------------------------");
 

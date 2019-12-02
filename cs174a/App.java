@@ -223,7 +223,7 @@ public class App implements Testable
 									"amount DECIMAL(15,2), " +
 									"type VARCHAR(20), " +
 									"fee DECIMAL(15,2), " +
-									"check_no INTEGER, " +
+									"check_no INTEGER DEFAULT 0, " +
 									"avg_daily_balance DECIMAL(15,2), " +
 									"PRIMARY KEY (tid) )";
 
@@ -480,7 +480,6 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			System.out.println("oops 1");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
@@ -499,7 +498,6 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			System.out.println("oops 2");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
@@ -514,7 +512,6 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
-			System.out.println("oops 3");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
@@ -557,6 +554,30 @@ public class App implements Testable
 		boolean checkAccount = checkClosed(accountId);
 		if(checkAccount == true) {
 			System.out.println("Attempting to link customer to a closed account. Customer creation failed.");
+			return "1";
+		}
+
+		String checkForCust = checkCustomerExists(tin);
+		if(checkForCust.equals("1")) {
+			System.out.println("Customer with given tax ID already exists.");
+			return "1";
+		}
+
+		String checkForAcc = "SELECT COUNT(*) FROM Accounts A WHERE A.aid = ?";
+		try( PreparedStatement checkAccExists = _connection.prepareStatement(checkForAcc))
+		{
+			checkAccExists.setString(1, accountId);
+			ResultSet rs2 = checkAccExists.executeQuery();
+			while(rs2.next()) {
+				if(rs2.getInt(1) == 0) {
+					System.out.println("Account doesn't exist.");
+					return "1";
+				}
+			}
+		}
+		catch( SQLException e )
+		{
+			System.err.println( e.getMessage() );
 			return "1";
 		}
 
@@ -641,7 +662,6 @@ public class App implements Testable
 	@Override
 	public String deposit( String accountId, double amount )
 	{
-		// WRITE STATEMENTS FOR CREATING ACCOUNT OBJECT, MODIFYING BALANCE, AND RESETTING
 		double oldBalance = 0;
 		double newBalance = 0;
 
@@ -1283,11 +1303,32 @@ public class App implements Testable
 		return "0 " + fromNewBalance + " " + toNewBalance;
 	}
 
+	public int getCheckNo() {
+		int check_no = 0;
+		try (Statement getCheckNo = _connection.createStatement()) {
+			ResultSet rs = getCheckNo.executeQuery("SELECT MAX(T.check_no) FROM Transactions T");
+			while(rs.next()) {
+				check_no = rs.getInt(1);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return -1;
+		}
+		return check_no;
+	}
+
 	public String writeCheck(String accountId, double amount) {
 		double oldBalance = 0;
 		double newBalance = 0;
 		boolean shouldClose = false;
-		int check_no = 0; // FIND A WAY TO RANDOMIZE THIS AND KEEP UNIQUE
+		int check_no = getCheckNo();
+		if (check_no == -1) {
+			System.out.println("Error generating check number.");
+			return "1 " + oldBalance + " " + newBalance; 
+		}
+
+		check_no = check_no + 1;
 
 		boolean checkType = checkType(accountId, "student");
 		boolean checkType2 = checkType(accountId, "interest");
@@ -1561,22 +1602,294 @@ public class App implements Testable
 		return "0";
 	}
 
-	public String generateMonthly() {
+	public String checkInsurance(String tin) {
+		ArrayList<String> primaryAcc = new ArrayList<String>();
+		double sum = 0;
+
+		String getAcc = "SELECT P.aid FROM Primary P WHERE P.tax_id = ?";
+		try(PreparedStatement accStatement = _connection.prepareStatement(getAcc)) {
+			accStatement.setString(1, tin);
+			ResultSet rs = accStatement.executeQuery();
+			while(rs.next()) {
+				primaryAcc.add(rs.getString(1));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Error retrieving accounts where customer is the primary owner.");
+			return "1";
+		}
+
+		for(int i = 0; i < primaryAcc.size(); i++) {
+			String getBalance = "SELECT A.curr_balance FROM Accounts A WHERE A.aid = ?";
+			try(PreparedStatement balStatement = _connection.prepareStatement(getBalance)) {
+				balStatement.setString(1, primaryAcc.get(i));
+				ResultSet rs3 = balStatement.executeQuery();
+				while(rs3.next()) {
+					sum = sum + rs3.getDouble(1);
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				System.out.println("Error retrieving balance from accounts where customer is the primary owner.");
+				return "1";
+			}
+		}
+
+		if(sum > 100000) {
+			System.out.println("WARNING: Limit of the insurance has been reached.");
+			return "1";
+		}
+		return "0";
+	}
+
+	public String generateMonthly(String tin) {
 		// Pull month from BankDate. Use MONTH() to make a query to pull all transactions with this month for the given customer
 		// query for names and addresses of all customers in Owners with that account id.
-		// Pull initial balance and current balance from accounts involved. 
-		// Find all accounts where customer is primary owner (from Primary) and add up current balances - if > 100000 print warning
+		ArrayList<String> ownedAccounts = new ArrayList<String>();
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot generate monthly statements until the end of the month");
+			return "1";
+		}
+
+		String checkPrimary = "SELECT COUNT(*) FROM Primary P WHERE P.tax_id = ?";
+		try(PreparedStatement pStatement = _connection.prepareStatement(checkPrimary)) {
+			pStatement.setString(1, tin);
+			ResultSet rs = pStatement.executeQuery();
+			while(rs.next()) {
+				if(rs.getInt(1) == 0) {
+					System.out.println("Customer with tax ID is not a primary owner of any account.");
+					return "1";
+				}
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		// Get all accounts 
+		String getAcc = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
+		try(PreparedStatement accStatement = _connection.prepareStatement(getAcc)) {
+			accStatement.setString(1, tin);
+			ResultSet rs = accStatement.executeQuery();
+			while(rs.next()) {
+				ownedAccounts.add(rs.getString(1));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		for(int i = 0; i < ownedAccounts.size(); i++) {
+			System.out.println("------This Month's Transactions for Account "+ownedAccounts.get(i)+"------");
+			
+			String getBalance = "SELECT A.init_balance, A.curr_balance FROM Accounts A WHERE A.aid = ?";
+			try(PreparedStatement balStatement = _connection.prepareStatement(getBalance)) {
+				balStatement.setString(1, ownedAccounts.get(i));
+				ResultSet rs3 = balStatement.executeQuery();
+				while(rs3.next()) {
+					System.out.println("Initial Balance: "+rs3.getString(1)+" Final Balance: "+rs3.getString(2));
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return "1";
+			}
+
+			LinkedHashMap<String, ArrayList<String>> transactionInfo = new LinkedHashMap<String, ArrayList<String>>();
+
+			String getTInfo = "SELECT I.tid, I.aid_to, I.aid_from FROM Involves I WHERE I.aid_to = ? OR I.aid_from = ?";
+			try(PreparedStatement tStatement = _connection.prepareStatement(getTInfo)) {
+				tStatement.setString(1, ownedAccounts.get(i));
+				tStatement.setString(2, ownedAccounts.get(i));
+				ResultSet rs4 = tStatement.executeQuery();
+				while(rs4.next()) {
+					ArrayList<String> tmp = new ArrayList<String>();
+					tmp.add(rs4.getString(2));
+					tmp.add(rs4.getString(3));
+					transactionInfo.put(rs4.getString(1), tmp);
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return "1";
+			}
+
+			// get names and addresses of all owners
+			System.out.println("------------------------ Owners ------------------------");
+			System.out.println(String.format("%-20s %-50s", "Name", "Address"));
+			System.out.println(String.format("%-20s %-50s", "----", "-------"));
+			String getName = "SELECT C.name, C.address FROM Customers C WHERE C.tax_id IN (SELECT O.tax_id FROM Owners O WHERE O.aid = ?)";
+			try(PreparedStatement nameStatement = _connection.prepareStatement(getName)) {
+				nameStatement.setString(1, ownedAccounts.get(i)); 
+				ResultSet rs_c = nameStatement.executeQuery();
+				while(rs_c.next()) {
+					String tmp = String.format("%-20s %-50s", rs_c.getString(1), rs_c.getString(2));
+					System.out.println(tmp);
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return "1";
+			}
+
+			// get amount and type for each transaction
+			System.out.println("--------------------- Transactions ---------------------");
+			for(String j : transactionInfo.keySet()) {
+				String getTInfo2 = "SELECT T.amount, T.type FROM Transactions T WHERE T.tid = ?";
+				try(PreparedStatement tStatement2 = _connection.prepareStatement(getTInfo2)) {
+					tStatement2.setString(1, j);
+					ResultSet rs5 = tStatement2.executeQuery();
+					while(rs5.next()) {
+						(transactionInfo.get(j)).add(rs5.getString(1));
+						(transactionInfo.get(j)).add(rs5.getString(2));
+					}
+				} catch ( SQLException e )
+				{
+					System.err.println( e.getMessage() );
+					return "1";
+				}
+
+				// WE DON'T ACTUALLY KEEP TRACK OF WHO (SPECIFIC CUSTOMER) DID THE TRANSACTION??? WE JUST KEEP TRACK OF THE AIDS, BUT
+				// MULTIPLE PEOPLE COULD OWN ONE ACCOUNT SO HOW DO WE KNOW WHO INITIATED?
+				/*String getName = "SELECT C.name FROM Customers C WHERE C.tax_id IN (SELECT O.tax_id FROM Owners O WHERE O.aid = ?)";
+				try(PreparedStatement nameStatement = _connection.prepareStatement(getName)) {
+					nameStatement.setString(1, transactionInfo.get(j).get(2)); // get name of initiator - aid_from
+					ResultSet rs6 = nameStatement.executeQuery();
+					while(rs6.next()) {
+						(transactionInfo.get(j)).add(rs6.getString(1));
+					}
+				} catch ( SQLException e )
+				{
+					System.err.println( e.getMessage() );
+					return "1";
+				}*/
+				// transaction info: transaction id, aid_to, aid_from, amount, type
+				if(transactionInfo.get(j).get(3).equals("fee")) {
+					System.out.println(j+": "+transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to bank");
+				} else {
+					System.out.println(j+": "+transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to "+transactionInfo.get(j).get(0));
+				}
+			}
+			System.out.println("");
+		}
+
+		checkInsurance(tin);
+
 		return "0";
 	}
 
 	public String generateDTER() {
+		ArrayList<String> customers = new ArrayList<String>();
+		try(Statement custStatement = _connection.createStatement()) {
+			ResultSet rs = custStatement.executeQuery("SELECT C.tax_id FROM Customers C");
+			while(rs.next()) {
+				customers.add(rs.getString("tax_id"));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "1";
+		}
+
+		for(int i = 0; i < customers.size(); i++) {
+			double sum = 0;
+
+			// get all accounts the customer owns
+			ArrayList<String> ownedAccs = new ArrayList<String>();
+
+			String getAcc = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
+			try(PreparedStatement accStatement = _connection.prepareStatement(getAcc)) {
+				accStatement.setString(1, customers.get(i));
+				ResultSet rs = accStatement.executeQuery();
+				while(rs.next()) {
+					ownedAccs.add(rs.getString(1));
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return "1";
+			}
+
+			String listOfAccs = makeQueryList(ownedAccs);
+			ArrayList<String> tempTransactions = new ArrayList<String>();
+
+			// deposits and transfers
+			String getTInfo = "SELECT I.tid FROM Involves I WHERE I.aid_from IN "+listOfAccs+" AND I.aid_to IN "+listOfAccs;
+			try(Statement tStatement = _connection.createStatement()) {
+				ResultSet rs2 = tStatement.executeQuery(getTInfo);
+				while(rs2.next()) {
+					tempTransactions.add(rs2.getString(1));
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return "1";
+			}
+
+			System.out.println(tempTransactions);
+
+			for(int j = 0; j < tempTransactions.size(); j++) {
+				String getAmt = "SELECT T.amount FROM Transactions T WHERE T.tid = ? AND (T.type = \'deposit\' OR T.type = \'transfer\')";
+				try(PreparedStatement amtStatement = _connection.prepareStatement(getAmt)) {
+					amtStatement.setString(1, tempTransactions.get(j));
+					ResultSet rs3 = amtStatement.executeQuery();
+					while(rs3.next()) {
+						sum = sum + rs3.getDouble("amount");
+					}
+				} catch ( SQLException e )
+				{
+					System.err.println( e.getMessage() );
+					return "1";
+				}
+			}
+
+			tempTransactions.clear();
+
+			// wires
+			String getTInfo2 = "SELECT I.tid FROM Involves I WHERE I.aid_to IN "+listOfAccs;
+			try(Statement tStatement = _connection.createStatement()) {
+				ResultSet rs4 = tStatement.executeQuery(getTInfo2);
+				while(rs4.next()) {
+					tempTransactions.add(rs4.getString(1));
+				}
+			} catch ( SQLException e )
+			{
+				System.err.println( e.getMessage() );
+				return "1";
+			}
+
+			System.out.println(tempTransactions);
+
+			for(int j = 0; j < tempTransactions.size(); j++) {
+				String getAmt2 = "SELECT T.amount FROM Transactions T WHERE T.tid = ? AND T.type = \'wire\'";
+				try(PreparedStatement amtStatement2 = _connection.prepareStatement(getAmt2)) {
+					amtStatement2.setString(1, tempTransactions.get(j));
+					ResultSet rs5 = amtStatement2.executeQuery();
+					while(rs5.next()) {
+						sum = sum + rs5.getDouble("amount");
+					}
+				} catch ( SQLException e )
+				{
+					System.err.println( e.getMessage() );
+					return "1";
+				}
+			}
+			
+			if(sum > 10000) {
+				System.out.println(customers.get(i));
+			}
+		}
+
 		return "0";
 	}
 
 	public String generateCustomerReport(String tin) {
 		String findAccounts = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
 		ArrayList<String> accounts = new ArrayList<String>();
-		//String accounts = "";
 		try(PreparedStatement accStatement = _connection.prepareStatement(findAccounts)) {
 			accStatement.setString(1, tin);
 			ResultSet rs = accStatement.executeQuery();
@@ -1641,7 +1954,7 @@ public class App implements Testable
 		{
 			System.err.println( e.getMessage() );
 		}
-		if(numDays == day) { // need to adjust to same type
+		if(numDays == day) { 
 			return true;
 		} else {
 			return false;
