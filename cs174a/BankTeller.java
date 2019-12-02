@@ -37,13 +37,13 @@ public class BankTeller {
                 case "1": //Generate Monthly Statement
                     //generateMontly()
                     break;
-                case "2": //List Closed Accounts (Problems: if empty, generate appropriate output)
+                case "2": //List Closed Accounts 
                     app.listClosedAccounts();
                     break;  
                 case "3": //Generate Government Drug and Tax Evasion Report
                     //generateDTER()
                     break;
-                case "4": //Generate Customer Report (Problems: ORA message if tax_id not valid)
+                case "4": //Generate Customer Report 
                     System.out.println("Enter the tax ID you would like to generate a report for: ");
                     String tin = s.nextLine();
                     app.generateCustomerReport(tin);
@@ -160,7 +160,7 @@ public class BankTeller {
                     //         delete all closed accounts (#1 and #3 should be deleted)
                     //         savings (#2) still active in accounts, but is not listed under owners as customer has been deleted
                     //         customer and owners tables are empty    
-                case "8": //Delete Transactions (Problems: on complete, generate success message)
+                case "8": //Delete Transactions 
                     app.deleteTransactions();
                     break;
                 case "9": //Exit Teller App

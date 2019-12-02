@@ -334,12 +334,18 @@ public class Main
 
 				System.out.println("----------------------------");
 
-				//r = app.deleteTransactions();
-				//System.out.println( r );
+				r = app.deleteTransactions();
+				System.out.println( r );
 
 				System.out.println("----------------------------");
 
 				r = app.generateCustomerReport("212116070");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail
+				r = app.generateCustomerReport("000000000");
 				System.out.println( r );
 
 				System.out.println("----------------------------");
