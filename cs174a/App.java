@@ -462,6 +462,17 @@ public class App implements Testable
 	@Override
 	public String createPocketAccount( String id, String linkedId, double initialTopUp, String tin )
 	{
+		if(initialTopUp <= 0.01) {
+			System.out.println("Pocket account must have at least $0.02. Pocket account creation failed");
+			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+		}
+
+		boolean checkAccount = checkClosed(linkedId);
+		if(checkAccount == true) {
+			System.out.println("Attempting to link pocket account to a closed account. Pocket account creation failed.");
+			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+		}
+
 		// Check if customer already has the savings or checkings account
 		ArrayList<String> ownedAccs = new ArrayList<String>();
 		String findCustomer = "SELECT O.aid FROM Owners O WHERE O.tax_id = ?";
@@ -520,11 +531,6 @@ public class App implements Testable
 		createOwners(tin, id);
 
 		topUp(id, initialTopUp);
-		
-		String check = chargeFee(linkedId, 5.00);
-		if(check.equals("1")) {
-			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin; 
-		}
 
 		return "0 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 	}
@@ -739,6 +745,26 @@ public class App implements Testable
 		}
 	}
 
+	public String checkFirstOfMonth(String accountId) {
+		String checkTransactions = "SELECT COUNT(*) FROM Involves I WHERE I.aid_to = ? OR I.aid_from = ?";
+		try( PreparedStatement check = _connection.prepareStatement(checkTransactions) ) {
+			check.setString(1, accountId);
+			check.setString(2, accountId);
+			ResultSet rs = check.executeQuery();
+			while(rs.next()) {
+				if(rs.getInt(1) == 0) {
+					return "1";
+				}
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Error in checking if first transaction of the month.");
+			return "-1";
+		}
+		return "0";
+	}
+
 	@Override
 	public String topUp( String accountId, double amount )
 	{
@@ -748,7 +774,11 @@ public class App implements Testable
 		double linkedNewBalance = 0;
 		double pocketNewBalance = 0;
 
-		// need to check if first top-up of the month for the pocket account
+		// check if first transaction of the month for the pocket account
+		String isFirst = checkFirstOfMonth(accountId);
+		if(isFirst.equals("-1")) {
+			return "1 " + linkedNewBalance + " " + pocketNewBalance;
+		}
 
 		String getMain = "SELECT L.aid_main FROM LinkedTo L WHERE L.aid_pocket = ?";
 		try( PreparedStatement mainStatement = _connection.prepareStatement(getMain) ) {
@@ -782,7 +812,16 @@ public class App implements Testable
 		pocketNewBalance = pocketOldBalance + amount;
 
 		if(Double.compare(linkedNewBalance, 0.00) >= 0 && Double.compare(pocketNewBalance, 0.00) >= 0) {
-			String isValid = createTransaction("topUp", amount, 0.00, 0, 0.00, accountId, main_id, pocketNewBalance, linkedNewBalance);
+			String isValid = "";
+			if(isFirst.equals("1")) {
+				isValid = createTransaction("topUp", amount, 5.00, 0, 0.00, accountId, main_id, pocketNewBalance, linkedNewBalance);
+				String check = chargeFee(main_id, 5.00);
+				if(check.equals("1")) {
+					return "1 " + linkedNewBalance + " " + pocketNewBalance;
+				}
+			} else {
+				isValid = createTransaction("topUp", amount, 0.00, 0, 0.00, accountId, main_id, pocketNewBalance, linkedNewBalance);
+			}
 			if(isValid.equals("1")) {
 				System.out.println("Transaction failed.");
 				return "1 " + linkedNewBalance + " " + pocketNewBalance;
@@ -804,6 +843,11 @@ public class App implements Testable
 		double toNewBalance = 0;
 		boolean checkType = checkType(from, "pocket");
 		boolean checkType2 = checkType(to, "pocket");
+		String isFirst = checkFirstOfMonth(from);
+		String isFirst2 = checkFirstOfMonth(to);
+		if(isFirst.equals("-1") || isFirst2.equals("-1")) {
+			return "1 " + fromNewBalance + " " + toNewBalance;
+		}
 
 		if (checkType == false || checkType2 == false) {
 			System.out.println("One or more involved accounts are not pocket accounts.");
@@ -831,7 +875,22 @@ public class App implements Testable
 		toNewBalance = toOldBalance + amount;
 
 		if(Double.compare(fromNewBalance, 0.00) >= 0 && Double.compare(toNewBalance, 0.00) >= 0) {
-			String isValid = createTransaction("payFriend", amount, 0.00, 0, 0.00, to, from, toNewBalance, fromNewBalance);
+			String isValid = "";
+			if(isFirst.equals("1") || isFirst2.equals("1")) {
+				isValid = createTransaction("payFriend", amount, 5.00, 0, 0.00, to, from, toNewBalance, fromNewBalance);
+				String check = "";
+				if(isFirst.equals("1")) {
+					chargeFee(from, 5.00);
+				}
+				if(isFirst2.equals("1")) {
+					chargeFee(to, 5.00);
+				}
+				if(check.equals("1")) {
+					return "1 " + fromNewBalance + " " + toNewBalance;
+				}
+			} else {
+				isValid = createTransaction("payFriend", amount, 0.00, 0, 0.00, to, from, toNewBalance, fromNewBalance);
+			}
 			if(isValid.equals("1")) {
 				System.out.println("Transaction failed.");
 				return "1 " + fromNewBalance + " " + toNewBalance;
@@ -939,6 +998,40 @@ public class App implements Testable
 		}
 	}
 
+	public void closePockets(String accountId) {
+		ArrayList<String> pocketAccs = new ArrayList<String>();
+
+		String getPockets = "SELECT L.aid_pocket FROM LinkedTo L WHERE L.aid_main = ?";
+		try(PreparedStatement pocketStatement = _connection.prepareStatement(getPockets)) {
+			pocketStatement.setString(1, accountId);
+			ResultSet rs = pocketStatement.executeQuery();
+			while(rs.next()) {
+				pocketAccs.add(rs.getString(1));
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Could not find pocket accounts.");
+		}
+
+		// If no pocket accounts are linked
+		if(pocketAccs.size() == 0) { 
+			return;
+		}
+
+		String pocketList = makeQueryList(pocketAccs);
+
+		String updActive = "UPDATE Accounts SET active = 0 WHERE aid IN "+pocketList;
+		try(Statement updateActive = _connection.createStatement()) {
+			updateActive.executeUpdate(updActive);
+			System.out.println("Closed pocket account.");
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Could not close pocket account.");
+		}
+	}
+
 	public void closeAccount(String accountId) {
 		String updActive = "UPDATE Accounts SET active = 0 WHERE aid = ?";
 		try(PreparedStatement updateActive = _connection.prepareStatement(updActive)) {
@@ -950,6 +1043,7 @@ public class App implements Testable
 			System.err.println( e.getMessage() );
 			System.out.println("Could not close account.");
 		}
+		closePockets(accountId);
 	}
 
 	public String createTransaction( String type, double amount, double fee, int check_no, double avg_daily_balance, String aid_to, String aid_from, double newTo, double newFrom) {
@@ -1064,6 +1158,10 @@ public class App implements Testable
 		double oldBalance = 0;
 		double newBalance = 0;
 		boolean shouldClose = false;
+		String isFirst = checkFirstOfMonth(accountId);
+		if(isFirst.equals("-1")) {
+			return "1 " + oldBalance + " " + newBalance;
+		}
 
 		boolean checkType = checkType(accountId, "pocket");
 		
@@ -1080,7 +1178,16 @@ public class App implements Testable
 		newBalance = oldBalance - amount;
 		
 		if(Double.compare(newBalance, 0.00) >= 0) {
-			String isValid = createTransaction("purchase", amount, 0.00, 0, 0.00, accountId, accountId, newBalance, newBalance);
+			String isValid = "";
+			if(isFirst.equals("1")) {
+				isValid = createTransaction("purchase", amount, 5.00, 0, 0.00, accountId, accountId, newBalance, newBalance);
+				String check = chargeFee(accountId, 5.00);
+				if(check.equals("1")) {
+					return "1 " + oldBalance + " " + newBalance;
+				}
+			} else {
+				isValid = createTransaction("purchase", amount, 0.00, 0, 0.00, accountId, accountId, newBalance, newBalance);
+			}
 			if(isValid.equals("1")) {
 				System.out.println("Transaction failed.");
 				return "1 " + oldBalance + " " + newBalance;
@@ -1122,6 +1229,11 @@ public class App implements Testable
 		if(Double.compare(amount, 2000) > 0) {
 			System.out.println("Transfer amount is too large");
 			return "1 " + fromNewBalance + " " + toNewBalance; 
+		}
+
+		if(from.equals(to)) {
+			System.out.println("Cannot transfer funds to the same account.");
+			return "1 " + fromNewBalance + " " + toNewBalance;
 		}
 
 		boolean check = isOwner(from);
@@ -1179,6 +1291,11 @@ public class App implements Testable
 		double pocketNewBalance = 0.00;
 		double linkedNewBalance = 0.00;
 
+		String isFirst = checkFirstOfMonth(pocketId);
+		if(isFirst.equals("-1")) {
+			return "1 " + pocketNewBalance + " " + linkedNewBalance; 
+		}
+
 		boolean checkType = checkType(pocketId, "pocket");
 		boolean checkType2 = isCheckingOrSavings(linkedId);
 		
@@ -1198,7 +1315,16 @@ public class App implements Testable
 		linkedNewBalance = linkedOldBalance + amount;
 
 		if(Double.compare(pocketNewBalance, 0.00) >= 0 && Double.compare(linkedNewBalance, 0.00) >= 0) {
-			String isValid = createTransaction("collect", amount, 0.00, 0, 0.00, linkedId, pocketId, linkedNewBalance, pocketNewBalance); 
+			String isValid = "";
+			if(isFirst.equals("1")) {
+				isValid = createTransaction("collect", amount, fee+5, 0, 0.00, linkedId, pocketId, linkedNewBalance, pocketNewBalance); 
+				String check = chargeFee(pocketId, 5.00);
+				if(check.equals("1")) {
+					return "1 " + pocketNewBalance + " " + linkedNewBalance;
+				}
+			} else {
+				isValid = createTransaction("collect", amount, fee, 0, 0.00, linkedId, pocketId, linkedNewBalance, pocketNewBalance); 
+			}
 			if(isValid.equals("1")) {
 				System.out.println("Transaction failed.");
 				return "1 " + pocketNewBalance + " " + linkedNewBalance;
@@ -1584,11 +1710,17 @@ public class App implements Testable
 			System.out.println("Cannot generate monthly statements until the end of the month");
 			return "1";
 		}
+
 		boolean checkType = isCheckingOrSavings(accountId);
-		
 		if (checkType == false) {
 			System.out.println("The involved accounts must be a savings/checking account.");
-			//return "1 " + oldBalance + " " + newBalance; 
+			return "1";
+		}
+
+		boolean checkClosed = checkClosed(accountId);
+		if (checkClosed == true) {
+			System.out.println("Cannot accrue interest for a closed account.");
+			return "1";
 		}
 
 		double numDays = getNumDays();
