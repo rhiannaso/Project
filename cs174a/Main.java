@@ -27,7 +27,7 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			Scanner s = new Scanner(System.in);
-			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Example Test (Long)\n-----------------");
+			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Accrue Interest Test\n4: Example Test (Long)\n-----------------");
 			String input = s.nextLine();
 			if(input.equals("0")){
 				app.dropTables();
@@ -74,6 +74,59 @@ public class Main
 				System.out.println( r );
 
 				System.out.println("----------------------------");
+			} else if( input.equals("3") ) {
+				r = app.setDate(2019, 11, 5);
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "17431", 1000, "344151573", "Joe Pepsi", "3210 State St" );
+				System.out.println( r );
+
+				app.setTaxId("344151573");
+
+				r = app.createCheckingSavingsAccount(AccountType.SAVINGS, "12345", 5000, "122219876", "Elizabeth Sailor", "4321 State St");
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "41725", 15000, "201674933", "George Brush", "5346 Foothill Av" );
+				System.out.println( r );
+
+				r = app.createOwners("344151573", "41725");
+				System.out.println( r );
+
+				r = app.setDate(2019, 11, 10);
+				System.out.println( r );
+
+				r = app.transfer("41725", "17431", 25);
+				System.out.println( r );
+
+				r = app.withdrawal("17431", 100);
+				System.out.println( r );
+
+				r = app.setDate(2019, 11, 15);
+				System.out.println( r );
+
+				r = app.writeCheck("17431", 200);
+				System.out.println( r );
+
+				r = app.setDate(2019, 11, 25);
+				System.out.println( r );
+
+				app.setTaxId("344151573");
+
+				r = app.wire("17431", "12345", 50);
+				System.out.println( r );
+
+				r = app.deposit("17431", 300);
+				System.out.println( r );
+
+				r = app.setDate(2019, 11, 30);
+				System.out.println( r );
+
+				r = app.addInterest();
+				System.out.println( r );
+
+				// should not go through
+				r = app.addInterest();
+				System.out.println( r );
 			} else {
 				//app.exampleAccessToDB();                // Example on how to connect to the DB.
 
