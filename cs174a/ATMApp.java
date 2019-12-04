@@ -189,7 +189,7 @@ public class ATMApp {
                             System.out.println("\nTransfer successful!");
                         }
                         break;
-                    case "5": //collect (Problems: Error with charge fee when collecting from account, might be from closed linked account)
+                    case "5": //collect
                         System.out.println("Enter your account ID: ");
                         aid = s.nextLine();
                         while(checkOwnerAccounts(aidList, aid) == false){
