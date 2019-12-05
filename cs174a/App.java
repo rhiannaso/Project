@@ -475,6 +475,11 @@ public class App implements Testable
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
+		String checkError = topUp(id, initialTopUp);
+		if(Character.toString(checkError.charAt(0)).equals("1")) {
+			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+		}
+
 		String createAccount = "INSERT INTO Accounts(aid, init_balance, curr_balance, interest, active, type) " +
 								"VALUES (?, ?, ?, ?, ?, ?) ";
 		try( PreparedStatement prepStatement2 = _connection.prepareStatement(createAccount))
@@ -507,7 +512,7 @@ public class App implements Testable
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
-		String checkError = createPrimary(tin, id);
+		checkError = createPrimary(tin, id);
 
 		if(checkError.equals("1")) {
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
@@ -516,11 +521,6 @@ public class App implements Testable
 		checkError = createOwners(tin, id);
 
 		if(checkError.equals("1")) {
-			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
-		}
-
-		checkError = topUp(id, initialTopUp);
-		if(Character.toString(checkError.charAt(0)).equals("1")) {
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 

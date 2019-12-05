@@ -27,7 +27,7 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			Scanner s = new Scanner(System.in);
-			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Accrue Interest Test\n4: Example Test (Long)\n-----------------");
+			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Accrue Interest Test\n4: Actual Sample DB Test\n5: Example Test (Long)\n-----------------");
 			String input = s.nextLine();
 			if(input.equals("0")){
 				app.dropTables();
@@ -126,6 +126,30 @@ public class Main
 
 				// should not go through
 				r = app.addInterest();
+				System.out.println( r );
+			} else if (input.equals("4")) {
+				r = app.setDate(2011, 3, 1);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 2);
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 1000, "344151573", "Joe Pepsi", "3210 State St" );
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 3);
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "54321", 21000, "212431965", "Hurryson Ford", "678 State St" );
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "12121", 1200, "207843218", "David Copperfill", "1357 State St" );
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "41725", 15000, "201674933", "George Brush", "5346 Foothill Av" );
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "93156", 2000000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
 				System.out.println( r );
 			} else {
 				//app.exampleAccessToDB();                // Example on how to connect to the DB.
