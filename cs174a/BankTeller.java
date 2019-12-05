@@ -150,6 +150,8 @@ public class BankTeller {
                                 System.out.println("Savings account created successfully!");
                             }
                         } else if (createAcc.equals("3")){ //Pocket
+                            System.out.println("What is the checking/savings account that the new pocket account is linked to?");
+                            String chSavAcc = s.nextLine();
                             System.out.println("Give the newly created account an initial starting balance (greater than or equal to $1):");
                             strAmount = s.nextLine();
                             while(checkAmountInput(strAmount) == false || Double.parseDouble(strAmount) < 1){
@@ -157,8 +159,6 @@ public class BankTeller {
                                 strAmount = s.nextLine();
                             }
                             double amount = Double.parseDouble(strAmount);
-                            System.out.println("What is the checking/savings account that the new pocket account is linked to?");
-                            String chSavAcc = s.nextLine();
                             String r = app.createPocketAccount(aid, chSavAcc, amount, tax_id);
                             if(r.charAt(0) == '0'){
                                 System.out.println("Pocket account created successfully!");

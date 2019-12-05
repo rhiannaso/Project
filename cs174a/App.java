@@ -73,6 +73,8 @@ public class App implements Testable
 		final String DB_URL = "jdbc:oracle:thin:@cs174a.cs.ucsb.edu:1521/orcl";
 		final String DB_USER = "c##rhiannaso";
 		final String DB_PASSWORD = "5543541";
+		// final String DB_USER = "c##xueyiyao";
+		// final String DB_PASSWORD = "3219474";
 
 		// Initialize your system.  Probably setting up the DB connection.
 		Properties info = new Properties();
