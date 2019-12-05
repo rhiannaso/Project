@@ -31,12 +31,13 @@ public class BankTeller {
 
             String tax_id = "";
             String response = "";
+            String strAmount = "";
             switch(choice) {
                 case "0": //Enter Check Transaction
                     System.out.println("Enter the account that the check is written from:");
                     String aid_check = s.nextLine();
                     System.out.println("Enter the amount that the check is written for:");
-                    String strAmount = s.nextLine();
+                    strAmount = s.nextLine();
                     while(checkAmountInput(strAmount) == false){
                         System.out.println("Not a valid amount. Please re-enter:");
                         strAmount = s.nextLine();
@@ -101,36 +102,64 @@ public class BankTeller {
                         aid = s.nextLine();
 
                         if(createAcc.equals("0")){ //Interest Checking
+                            System.out.println("Give the newly created account an initial starting balance (greater than or equal to $1000):");
+                            strAmount = s.nextLine();
+                            while(checkAmountInput(strAmount) == false || Double.parseDouble(strAmount) < 1000){
+                                System.out.println("Not a valid amount. Please re-enter:");
+                                strAmount = s.nextLine();
+                            }
+                            double amount = Double.parseDouble(strAmount);
                             System.out.println("What is the name associated with the new account?");
                             String name = s.nextLine();
                             System.out.println("What is the address of the customer associated with the new account?");
                             String address = s.nextLine();
-                            String r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING , aid, 1000, tax_id, name, address);
+                            String r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING , aid, amount, tax_id, name, address);
                             if(r.charAt(0) == '0'){
                                 System.out.println("Checking account created successfully!");
                             }
                         } else if (createAcc.equals("1")){ //Student Checking
+                            System.out.println("Give the newly created account an initial starting balance (greater than or equal to $1000):");
+                            strAmount = s.nextLine();
+                            while(checkAmountInput(strAmount) == false || Double.parseDouble(strAmount) < 1000){
+                                System.out.println("Not a valid amount. Please re-enter:");
+                                strAmount = s.nextLine();
+                            }
+                            double amount = Double.parseDouble(strAmount);
                             System.out.println("What is the name associated with the new account?");
                             String name = s.nextLine();
                             System.out.println("What is the address of the customer associated with the new account?");
                             String address = s.nextLine();
-                            String r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING , aid, 1000, tax_id, name, address);
+                            String r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING , aid, amount, tax_id, name, address);
                             if(r.charAt(0) == '0'){
                                 System.out.println("Checking account created successfully!");
                             }
                         } else if (createAcc.equals("2")){ //Savings
+                            System.out.println("Give the newly created account an initial starting balance (greater than or equal to $1000):");
+                            strAmount = s.nextLine();
+                            while(checkAmountInput(strAmount) == false || Double.parseDouble(strAmount) < 1000){
+                                System.out.println("Not a valid amount. Please re-enter:");
+                                strAmount = s.nextLine();
+                            }
+                            double amount = Double.parseDouble(strAmount);
                             System.out.println("What is the name associated with the new account?");
                             String name = s.nextLine();
                             System.out.println("What is the address of the customer associated with the new account?");
                             String address = s.nextLine();
-                            String r = app.createCheckingSavingsAccount( AccountType.SAVINGS , aid, 1000, tax_id, name, address);
+                            String r = app.createCheckingSavingsAccount( AccountType.SAVINGS , aid, amount, tax_id, name, address);
                             if(r.charAt(0) == '0'){
                                 System.out.println("Savings account created successfully!");
                             }
                         } else if (createAcc.equals("3")){ //Pocket
+                            System.out.println("Give the newly created account an initial starting balance (greater than or equal to $1):");
+                            strAmount = s.nextLine();
+                            while(checkAmountInput(strAmount) == false || Double.parseDouble(strAmount) < 1){
+                                System.out.println("Not a valid amount. Please re-enter:");
+                                strAmount = s.nextLine();
+                            }
+                            double amount = Double.parseDouble(strAmount);
                             System.out.println("What is the checking/savings account that the new pocket account is linked to?");
                             String chSavAcc = s.nextLine();
-                            String r = app.createPocketAccount(aid, chSavAcc, 100, tax_id);
+                            String r = app.createPocketAccount(aid, chSavAcc, amount, tax_id);
                             if(r.charAt(0) == '0'){
                                 System.out.println("Pocket account created successfully!");
                             }
@@ -157,17 +186,24 @@ public class BankTeller {
                         tax_id = s.nextLine();
                         System.out.println("Give the newly created account a 5-digit id:");
                         aid = s.nextLine();
+                        System.out.println("Give the newly created account an initial starting balance (greater than or equal to $1000):");
+                        strAmount = s.nextLine();
+                        while(checkAmountInput(strAmount) == false || Double.parseDouble(strAmount) < 1000){
+                            System.out.println("Not a valid amount. Please re-enter:");
+                            strAmount = s.nextLine();
+                        }
+                        double amount = Double.parseDouble(strAmount);
                         System.out.println("What is the name associated with the new account?");
                         String name = s.nextLine();
                         System.out.println("What is the address of the customer associated with the new account?");
                         String address = s.nextLine();
                         String r = "";
                         if(createAcc.equals("0")){
-                            r = app.createCheckingSavingsAccount(AccountType.INTEREST_CHECKING, aid, 1000, tax_id, name, address);
+                            r = app.createCheckingSavingsAccount(AccountType.INTEREST_CHECKING, aid, amount, tax_id, name, address);
                         } else if (createAcc.equals("1")) {
-                            r = app.createCheckingSavingsAccount(AccountType.STUDENT_CHECKING, aid, 1000, tax_id, name, address);
+                            r = app.createCheckingSavingsAccount(AccountType.STUDENT_CHECKING, aid, amount, tax_id, name, address);
                         } else {
-                            r = app.createCheckingSavingsAccount(AccountType.SAVINGS, aid, 1000, tax_id, name, address);
+                            r = app.createCheckingSavingsAccount(AccountType.SAVINGS, aid, amount, tax_id, name, address);
                         }
 
                         if(r.charAt(0) == '0'){
