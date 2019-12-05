@@ -31,7 +31,6 @@ public class App implements Testable
 	private BankTeller bankTeller;
 	private LinkedHashMap<String, String> d;
 	private String taxId;
-	//private LinkedHashMap<String, Account> accountsInUse; // ACCOUNT ID: VARCHAR(5) 
 
 	/**
 	 * Default constructor.
@@ -353,7 +352,6 @@ public class App implements Testable
 			int count = -1;
 			while(rs.next()) {
 				count = rs.getInt(1);
-				System.out.println("COUNT "+ count);
 			}
 			if(count == 0) {
 				return false;
