@@ -203,6 +203,12 @@ public class Main
 
 				System.out.println("----------------------------");
 
+				// should fail
+				r = app.createOwners("212116070", "60413");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
 				r = app.listClosedAccounts();
 				System.out.println( r );
 
@@ -321,6 +327,17 @@ public class Main
 
 				System.out.println("----------------------------");
 
+				r = app.showBalance("29107");
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
+				// should fail, insufficient funds
+				r = app.wire("29107", "93156", 34964.99);
+				System.out.println( r );
+
+				System.out.println("----------------------------");
+
 				r = app.setDate(10, 21, 5);
 				System.out.println( r );
 
@@ -357,7 +374,7 @@ public class Main
 				System.out.println("----------------------------");
 
 				// should fail
-				r = app.withdrawal("29107", 1000000);
+				r = app.withdrawal("29107", 10000000);
 				System.out.println( r );
 
 				System.out.println("----------------------------");
@@ -404,6 +421,11 @@ public class Main
 				System.out.println("----------------------------");
 
 				app.setPIN("1717", "9999");
+
+				System.out.println("----------------------------");
+
+				r = app.setDate(2019, 12, 31);
+				System.out.println( r );
 
 				//double num2 = app.calculateAverage("67890", 1500.75, 30.0);
 				//System.out.println(Double.toString(num2));
