@@ -131,23 +131,13 @@ public class Main
 				r = app.setDate(2011, 3, 1);
 				System.out.println( r );
 
-				r = app.setDate(2011, 3, 2);
-				System.out.println( r );
-
-				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 8800, "344151573", "Joe Pepsi", "3210 State St" );
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 1200, "344151573", "Joe Pepsi", "3210 State St" );
 				System.out.println( r );
 				r = app.createCustomer("17431", "322175130", "Ivan Lendme", "1235 Johnson Dr");
 				System.out.println( r );
-
-				r = app.setDate(2011, 3, 3);
-				System.out.println( r );
-
 				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "54321", 21000, "212431965", "Hurryson Ford", "678 State St" );
 				System.out.println( r );
 				r = app.createCustomer("54321", "122219876", "Elizabeth Sailor", "4321 State St");
-				System.out.println( r );
-				app.setTaxId("122219876");
-				r = app.withdrawal("54321", 3000);
 				System.out.println( r );
 				r = app.createCustomer("54321", "203491209", "Nam-Hoi Chung", "1997 People\'s St HK");
 				System.out.println( r );
@@ -165,35 +155,24 @@ public class Main
 				System.out.println( r );
 				r = app.createCustomer("93156", "210389768", "Olive Stoner", "6689 El Colegio #151");
 				System.out.println( r );
-
-				r = app.setDate(2011, 3, 4);
-				System.out.println( r );
-
 				r = app.createPocketAccount("53027", "12121", 50, "207843218");
 				System.out.println( r );
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "43942", 1289, "361721022", "Alfred Hitchcock", "6667 El Colegio #40" );
 				System.out.println( r );
-				// for hurryson ford
 				r = app.createOwners("212431965", "43942");
 				System.out.println( r );
-				// for ivan lendme
 				r = app.createOwners("322175130", "43942");
 				System.out.println( r );
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "29107", 34000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
 				System.out.println( r );
 				r = app.createOwners("210389768", "29107");
 				System.out.println( r );
-
-				r = app.setDate(2011, 3, 5);
-				System.out.println( r );
-
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "19023", 2300, "412231856", "Cindy Laugher", "7000 Hollister" );
 				System.out.println( r );
 				r = app.createOwners("412231856", "17431");
 				System.out.println( r );
 				r = app.createOwners("412231856", "54321");
 				System.out.println( r );
-				// for george brush
 				r = app.createOwners("201674933", "19023");
 				System.out.println( r );
 				r = app.createCustomer("43942", "400651982", "Pit Wilson", "911 State St");
@@ -204,10 +183,8 @@ public class Main
 				System.out.println( r );
 				r = app.createOwners("188212217", "93156");
 				System.out.println( r ); 
-				// for joe pepsi
 				r = app.createOwners("344151573", "32156");
 				System.out.println( r ); 
-				// for david copperfill
 				r = app.createOwners("207843218", "32156");
 				System.out.println( r ); 
 				r = app.createOwners("122219876", "32156");
@@ -220,12 +197,35 @@ public class Main
 				System.out.println( r );
 				r = app.createOwners("188212217", "76543");
 				System.out.println( r ); 
-				app.setTaxId("212116070");
-				r = app.withdrawal("76543", 2000);
-				System.out.println( r );
 				r = app.createOwners("212116070", "29107");
 				System.out.println( r );
 				r = app.createPocketAccount("43947", "29107", 30, "212116070");
+				System.out.println( r );
+				r = app.createCustomer("19023", "401605312", "Fatal Castro", "3756 La Cumbre Plaza");
+				System.out.println( r );
+				r = app.createOwners("401605312", "41725");
+				System.out.println( r );
+				r = app.createPocketAccount("67521", "19023", 100, "401605312");
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 2);
+				System.out.println( r );
+
+				r = app.deposit("17431", 8800);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 3);
+				System.out.println( r );
+
+				app.setTaxId("122219876");
+				r = app.withdrawal("54321", 3000);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 5);
+				System.out.println( r );
+
+				app.setTaxId("212116070");
+				r = app.withdrawal("76543", 2000);
 				System.out.println( r );
 				app.setTaxId("207843218");
 				r = app.purchase("53027", 5);
@@ -234,16 +234,9 @@ public class Main
 				r = app.setDate(2011, 3, 6);
 				System.out.println( r );
 
-				r = app.createCustomer("19023", "401605312", "Fatal Castro", "3756 La Cumbre Plaza");
-				System.out.println( r );
-				r = app.createOwners("401605312", "41725");
-				System.out.println( r );
-				r = app.createPocketAccount("67521", "19023", 100, "401605312");
-				System.out.println( r );
 				app.setTaxId("188212217");
 				r = app.withdrawal("93156", 1000000);
 				System.out.println( r );
-				app.setTaxId("209378521");
 				r = app.writeCheck("93156", 950000);
 				System.out.println( r );
 				app.setTaxId("212116070");
@@ -252,6 +245,65 @@ public class Main
 				r = app.collect("43947", "29107", 10);
 				System.out.println( r );
 				r = app.topUp("43947", 30);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 7);
+				System.out.println( r );
+
+				app.setTaxId("322175130");
+				r = app.transfer("43942", "17431", 289);
+				System.out.println( r );
+				app.setTaxId("400651982");
+				r = app.withdrawal("43942", 289);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 8);
+				System.out.println( r );
+
+				r = app.payFriend("60413", "67521", 10);
+				System.out.println( r );
+				r = app.deposit("93156", 50000);
+				System.out.println( r );
+				r = app.writeCheck("12121", 200);
+				System.out.println( r );
+				app.setTaxId("201674933");
+				r = app.transfer("41725", "19023", 1000);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 9);
+				System.out.println( r );
+
+				app.setTaxId("401605312");
+				r = app.wire("41725", "32156", 4000);
+				System.out.println( r );
+				r = app.payFriend("53027", "60413", 10);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 10);
+				System.out.println( r );
+
+				app.setTaxId("400651982");
+				r = app.purchase("60413", 15);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 12);
+				System.out.println( r );
+
+				app.setTaxId("203491209");
+				r = app.withdrawal("93156", 20000);
+				System.out.println( r );
+				r = app.writeCheck("76543", 456);
+				System.out.println( r );
+				r = app.topUp("67521", 50);
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 14);
+				System.out.println( r );
+
+				r = app.payFriend("67521", "53027", 20);
+				System.out.println( r );
+				app.setTaxId("212116070");
+				r = app.collect("43947", "29107", 15);
 				System.out.println( r );
 
 			} else {
