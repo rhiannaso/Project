@@ -30,6 +30,7 @@ public class BankTeller {
             choice = s.nextLine();
 
             String tax_id = "";
+            String response = "";
             switch(choice) {
                 case "0": //Enter Check Transaction
                     System.out.println("Enter the account that the check is written from:");
@@ -40,7 +41,7 @@ public class BankTeller {
                         System.out.println("Not a valid amount. Please re-enter:");
                         strAmount = s.nextLine();
                     }
-                    String response = app.writeCheck(aid_check, Double.parseDouble(strAmount));
+                    response = app.writeCheck(aid_check, Double.parseDouble(strAmount));
                     if(response.charAt(0) == '0'){
                         System.out.println("\nCheck succesfully written!");
                     }
@@ -62,7 +63,10 @@ public class BankTeller {
                     app.generateCustomerReport(tin);
                     break;
                 case "5": //Add Interest
-                    //app.addInterest()
+                    response = app.addInterest();
+                    if(response.charAt(0) == '0'){
+                        System.out.println("\nInterest added!");
+                    }
                     break;
                 case "6": //Create Account
                     System.out.println("\nCreating account for:\n0: Returning Customer\n1: New Customer");
