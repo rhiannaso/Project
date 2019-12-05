@@ -151,6 +151,49 @@ public class Main
 
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "93156", 2000000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
 				System.out.println( r );
+
+				r = app.setDate(2011, 3, 4);
+				System.out.println( r );
+
+				r = app.createPocketAccount("53027", "12121", 50, "207843218");
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "43942", 1289, "361721022", "Alfred Hitchcock", "6667 El Colegio #40" );
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "29107", 34000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 5);
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "19023", 2300, "412231856", "Cindy Laugher", "7000 Hollister" );
+				System.out.println( r );
+
+				r = app.createCustomer("43942", "400651982", "Pit Wilson", "911 State St");
+				System.out.println( r );
+
+				r = app.createPocketAccount("60413", "43942", 20, "400651982");
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "32156", 1000, "188212217", "Michael Jordon", "3852 Court Rd" );
+				System.out.println( r );
+
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "76543", 8456, "212116070", "Li Kung", "2 People's Rd Beijing" );
+				System.out.println( r );
+
+				r = app.createOwners("212116070", "29107");
+				System.out.println( r );
+
+				r = app.createPocketAccount("43947", "29107", 30, "212116070");
+				System.out.println( r );
+
+				r = app.setDate(2011, 3, 6);
+				System.out.println( r );
+
+				r = app.createCustomer("43942", "401605312", "Fatal Castro", "3756 La Cumbre Plaza");
+				System.out.println( r );
+
 			} else {
 				//app.exampleAccessToDB();                // Example on how to connect to the DB.
 
