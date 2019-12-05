@@ -1796,7 +1796,70 @@ public class App implements Testable
 		return "0";
 	}
 
+	public String getMonth(String bankDate) {
+		String getMonth = "SELECT EXTRACT( MONTH FROM TO_DATE(?, \'YYYY-MM-DD\') ) MONTH FROM DUAL";
+		int month = 0;
+		try(PreparedStatement monthStatement = _connection.prepareStatement(getMonth)) {
+			monthStatement.setString(1, bankDate);
+			ResultSet rs = monthStatement.executeQuery();
+			while(rs.next()) {
+				month = rs.getInt(1);
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "-1";
+		}
+		switch(month) {
+			case 1: 
+				return "January";
+			case 2:
+				return "February";
+			case 3: 
+				return "March";
+			case 4:
+				return "April";
+			case 5:
+				return "May";
+			case 6:
+				return "June";
+			case 7:
+				return "July";
+			case 8:
+				return "August";
+			case 9:
+				return "September";
+			case 10:
+				return "October";
+			case 11:
+				return "November";
+			case 12:
+				return "December";
+			default:
+				System.out.println("Error in retrieving month.");
+				return "-1";
+		}
+	}
+
+	public String getYear(String bankDate) {
+		String getYear = "SELECT EXTRACT( YEAR FROM TO_DATE(?, \'YYYY-MM-DD\') ) YEAR FROM DUAL";
+		int year = 0;
+		try(PreparedStatement yearStatement = _connection.prepareStatement(getYear)) {
+			yearStatement.setString(1, bankDate);
+			ResultSet rs = yearStatement.executeQuery();
+			while(rs.next()) {
+				year = rs.getInt(1);
+			}
+			return Integer.toString(year);
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			return "-1";
+		}
+	}
+
 	public String generateMonthly(String tin) {
+		String bankDate = getDateInfo();
 		// Pull month from BankDate. Use MONTH() to make a query to pull all transactions with this month for the given customer
 		ArrayList<String> ownedAccounts = new ArrayList<String>();
 		boolean isEnd = checkEndOfMonth();
@@ -1835,8 +1898,11 @@ public class App implements Testable
 			return "1";
 		}
 
+		String month = getMonth(bankDate);
+		String year = getYear(bankDate);
+
 		for(int i = 0; i < ownedAccounts.size(); i++) {
-			System.out.println("------This Month's Transactions for Account "+ownedAccounts.get(i)+"------");
+			System.out.println("------"+month+" "+year+"\'s Transactions for Account "+ownedAccounts.get(i)+"------");
 			
 			String getBalance = "SELECT A.init_balance, A.curr_balance FROM Accounts A WHERE A.aid = ?";
 			try(PreparedStatement balStatement = _connection.prepareStatement(getBalance)) {
