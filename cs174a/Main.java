@@ -134,7 +134,9 @@ public class Main
 				r = app.setDate(2011, 3, 2);
 				System.out.println( r );
 
-				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 1000, "344151573", "Joe Pepsi", "3210 State St" );
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 8800, "344151573", "Joe Pepsi", "3210 State St" );
+				System.out.println( r );
+				r = app.createCustomer("17431", "322175130", "Ivan Lendme", "1235 Johnson Dr");
 				System.out.println( r );
 
 				r = app.setDate(2011, 3, 3);
@@ -142,14 +144,26 @@ public class Main
 
 				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "54321", 21000, "212431965", "Hurryson Ford", "678 State St" );
 				System.out.println( r );
-
+				r = app.createCustomer("54321", "122219876", "Elizabeth Sailor", "4321 State St");
+				System.out.println( r );
+				app.setTaxId("122219876");
+				r = app.withdrawal("54321", 3000);
+				System.out.println( r );
+				r = app.createCustomer("54321", "203491209", "Nam-Hoi Chung", "1997 People\'s St HK");
+				System.out.println( r );
 				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "12121", 1200, "207843218", "David Copperfill", "1357 State St" );
 				System.out.println( r );
-
 				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "41725", 15000, "201674933", "George Brush", "5346 Foothill Av" );
 				System.out.println( r );
-
-				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "93156", 2000000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				r = app.createCustomer("41725", "231403227", "Billy Clinton", "5777 Hollister");
+				System.out.println( r );
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "93156", 2000000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				System.out.println( r );
+				r = app.createOwners("122219876", "93156");
+				System.out.println( r );
+				r = app.createOwners("203491209", "93156");
+				System.out.println( r );
+				r = app.createCustomer("93156", "210389768", "Olive Stoner", "6689 El Colegio #151");
 				System.out.println( r );
 
 				r = app.setDate(2011, 3, 4);
@@ -157,11 +171,17 @@ public class Main
 
 				r = app.createPocketAccount("53027", "12121", 50, "207843218");
 				System.out.println( r );
-
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "43942", 1289, "361721022", "Alfred Hitchcock", "6667 El Colegio #40" );
 				System.out.println( r );
-
+				// for hurryson ford
+				r = app.createOwners("212431965", "43942");
+				System.out.println( r );
+				// for ivan lendme
+				r = app.createOwners("322175130", "43942");
+				System.out.println( r );
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "29107", 34000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				System.out.println( r );
+				r = app.createOwners("210389768", "29107");
 				System.out.println( r );
 
 				r = app.setDate(2011, 3, 5);
@@ -169,29 +189,69 @@ public class Main
 
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "19023", 2300, "412231856", "Cindy Laugher", "7000 Hollister" );
 				System.out.println( r );
-
+				r = app.createOwners("412231856", "17431");
+				System.out.println( r );
+				r = app.createOwners("412231856", "54321");
+				System.out.println( r );
+				// for george brush
+				r = app.createOwners("201674933", "19023");
+				System.out.println( r );
 				r = app.createCustomer("43942", "400651982", "Pit Wilson", "911 State St");
 				System.out.println( r );
-
 				r = app.createPocketAccount("60413", "43942", 20, "400651982");
 				System.out.println( r );
-
 				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "32156", 1000, "188212217", "Michael Jordon", "3852 Court Rd" );
 				System.out.println( r );
-
-				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "76543", 8456, "212116070", "Li Kung", "2 People's Rd Beijing" );
+				r = app.createOwners("188212217", "93156");
+				System.out.println( r ); 
+				// for joe pepsi
+				r = app.createOwners("344151573", "32156");
+				System.out.println( r ); 
+				// for david copperfill
+				r = app.createOwners("207843218", "32156");
+				System.out.println( r ); 
+				r = app.createOwners("122219876", "32156");
 				System.out.println( r );
-
+				r = app.createOwners("203491209", "32156");
+				System.out.println( r );
+				r = app.createOwners("210389768", "32156");
+				System.out.println( r );
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "76543", 8456, "212116070", "Li Kung", "2 People\'s Rd Beijing" );
+				System.out.println( r );
+				r = app.createOwners("188212217", "76543");
+				System.out.println( r ); 
+				app.setTaxId("212116070");
+				r = app.withdrawal("76543", 2000);
+				System.out.println( r );
 				r = app.createOwners("212116070", "29107");
 				System.out.println( r );
-
 				r = app.createPocketAccount("43947", "29107", 30, "212116070");
+				System.out.println( r );
+				app.setTaxId("207843218");
+				r = app.purchase("53027", 5);
 				System.out.println( r );
 
 				r = app.setDate(2011, 3, 6);
 				System.out.println( r );
 
-				r = app.createCustomer("43942", "401605312", "Fatal Castro", "3756 La Cumbre Plaza");
+				r = app.createCustomer("19023", "401605312", "Fatal Castro", "3756 La Cumbre Plaza");
+				System.out.println( r );
+				r = app.createOwners("401605312", "41725");
+				System.out.println( r );
+				r = app.createPocketAccount("67521", "19023", 100, "401605312");
+				System.out.println( r );
+				app.setTaxId("188212217");
+				r = app.withdrawal("93156", 1000000);
+				System.out.println( r );
+				app.setTaxId("209378521");
+				r = app.writeCheck("93156", 950000);
+				System.out.println( r );
+				app.setTaxId("212116070");
+				r = app.withdrawal("29107", 4000);
+				System.out.println( r );
+				r = app.collect("43947", "29107", 10);
+				System.out.println( r );
+				r = app.topUp("43947", 30);
 				System.out.println( r );
 
 			} else {

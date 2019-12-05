@@ -17,6 +17,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Scanner;
 import java.util.ArrayList;
+import java.util.Comparator;
 
 
 /**
@@ -30,7 +31,6 @@ public class App implements Testable
 	private BankTeller bankTeller;
 	private LinkedHashMap<String, String> d;
 	private String taxId;
-	//private LinkedHashMap<String, Account> accountsInUse; // ACCOUNT ID: VARCHAR(5) 
 
 	/**
 	 * Default constructor.
@@ -352,7 +352,6 @@ public class App implements Testable
 			int count = -1;
 			while(rs.next()) {
 				count = rs.getInt(1);
-				System.out.println("COUNT "+ count);
 			}
 			if(count == 0) {
 				return false;
@@ -472,6 +471,12 @@ public class App implements Testable
 		catch( SQLException e )
 		{
 			System.err.println( e.getMessage() );
+			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+		}
+
+		double linkedBalance = getBalance(linkedId);
+		if(Double.compare(linkedBalance, initialTopUp+5.02) < 0) {
+			System.out.println("Linked account does not have sufficient funds to create pocket account.");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
 
@@ -1917,7 +1922,7 @@ public class App implements Testable
 				return "1";
 			}
 
-			LinkedHashMap<String, ArrayList<String>> transactionInfo = new LinkedHashMap<String, ArrayList<String>>();
+			TreeMap<String, ArrayList<String>> transactionInfo = new TreeMap<String, ArrayList<String>>(new CompKeyStr());
 
 			String getTInfo = "SELECT I.tid, I.aid_to, I.aid_from FROM Involves I WHERE I.aid_to = ? OR I.aid_from = ?";
 			try(PreparedStatement tStatement = _connection.prepareStatement(getTInfo)) {
@@ -1987,6 +1992,12 @@ public class App implements Testable
 	}
 
 	public String generateDTER() {
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot generate monthly statements until the end of the month");
+			return "1";
+		}
+
 		ArrayList<String> customers = new ArrayList<String>();
 		try(Statement custStatement = _connection.createStatement()) {
 			ResultSet rs = custStatement.executeQuery("SELECT C.tax_id FROM Customers C");
@@ -2420,4 +2431,13 @@ public class App implements Testable
 		d.put("9", "i");
 		d.put("0", "j");
 	}
+}
+
+class CompKeyStr implements Comparator<String>{
+ 
+    @Override
+    public int compare(String str1, String str2) {
+        return Integer.valueOf(str1).compareTo(Integer.valueOf(str2));
+    }
+     
 }
