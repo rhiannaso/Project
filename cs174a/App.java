@@ -1696,27 +1696,26 @@ public class App implements Testable
 		double avg_daily_balance = 0;
 		double tempBal = 0;
 		for(Integer i : transactions.keySet()) {
-			avg_daily_balance += tempBal*((i-lastDay)/numDays);
+			avg_daily_balance += tempBal*(i-lastDay);
 			lastDay = i;
 
 			for(int j = 0; j < transactions.get(i).size(); j++) {
 				tempBal += transactions.get(i).get(j);
 			}
+			if((double)i == numDays) {
+				avg_daily_balance += tempBal*(i-lastDay+1);
+			}
 		}
 		if((double)transactions.lastKey() != numDays) {
-			avg_daily_balance += tempBal*((numDays-lastDay)/numDays);
+			avg_daily_balance += tempBal*(numDays-lastDay+1);
 		}
+
+		avg_daily_balance = avg_daily_balance/numDays;
 
 		return avg_daily_balance;
 	}
 
 	public String accrueInterest(String accountId) {
-		boolean isEnd = checkEndOfMonth();
-		if(isEnd == false) {
-			System.out.println("Cannot generate monthly statements until the end of the month");
-			return "1";
-		}
-
 		boolean checkType = isCheckingOrSavings(accountId);
 		if (checkType == false) {
 			System.out.println("The involved accounts must be a savings/checking account.");
@@ -1980,9 +1979,13 @@ public class App implements Testable
 
 				// transaction info: transaction id, aid_to, aid_from, amount, type
 				if(transactionInfo.get(j).get(3).equals("fee")) {
-					System.out.println(j+": "+transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to bank");
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to bank");
+				} else if(transactionInfo.get(j).get(3).equals("deposit")) {
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" to "+transactionInfo.get(j).get(0));
+				} else if(transactionInfo.get(j).get(3).equals("withdrawal") || transactionInfo.get(j).get(3).equals("writeCheck")) {
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1));
 				} else {
-					System.out.println(j+": "+transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to "+transactionInfo.get(j).get(0));
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to "+transactionInfo.get(j).get(0));
 				}
 			}
 			System.out.println("");
@@ -2158,6 +2161,12 @@ public class App implements Testable
 	public String addInterest() {
 		// Select all aids for accounts with active = 1 and checking or savingsand put in arraylist. iterate through arraylist and call accrueinterest
 		// find a way to note that this has been done for the month
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot generate monthly statements until the end of the month");
+			return "1";
+		}
+
 		try(Statement checkDone = _connection.createStatement()) {
 			ResultSet rs = checkDone.executeQuery("SELECT COUNT(*) FROM Transactions T WHERE T.type = \'addInterest\'");
 			while(rs.next()) {
@@ -2185,11 +2194,17 @@ public class App implements Testable
 			return "1";
 		}
 
+		String check = "";
 		for(int i = 0; i < openAccs.size(); i++) {
-			accrueInterest(openAccs.get(i));
+			check = accrueInterest(openAccs.get(i));
+			if(check.equals("1")) {
+				break;
+			}
 		}
 
-		createTransaction("addInterest", 0.00, 0.00, 0, 0.00, "0", "0", 0.00, 0.00);
+		if(check.equals("1") == false) {
+			createTransaction("addInterest", 0.00, 0.00, 0, 0.00, "0", "0", 0.00, 0.00);
+		}
 
 		return "0";
 	}
