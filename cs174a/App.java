@@ -1975,7 +1975,7 @@ public class App implements Testable
 					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to bank");
 				} else if(transactionInfo.get(j).get(3).equals("deposit")) {
 					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" to "+transactionInfo.get(j).get(0));
-				} else if(transactionInfo.get(j).get(3).equals("withdrawal")) {
+				} else if(transactionInfo.get(j).get(3).equals("withdrawal") || transactionInfo.get(j).get(3).equals("writeCheck")) {
 					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1));
 				} else {
 					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to "+transactionInfo.get(j).get(0));
