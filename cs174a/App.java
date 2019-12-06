@@ -1694,19 +1694,21 @@ public class App implements Testable
 		double avg_daily_balance = 0;
 		double tempBal = 0;
 		for(Integer i : transactions.keySet()) {
-			avg_daily_balance += tempBal*((i-lastDay)/numDays);
+			avg_daily_balance += tempBal*(i-lastDay);
 			lastDay = i;
 
 			for(int j = 0; j < transactions.get(i).size(); j++) {
 				tempBal += transactions.get(i).get(j);
 			}
 			if((double)i == numDays) {
-				avg_daily_balance += tempBal*((i-lastDay+1)/numDays);
+				avg_daily_balance += tempBal*(i-lastDay+1);
 			}
 		}
 		if((double)transactions.lastKey() != numDays) {
-			avg_daily_balance += tempBal*((numDays-lastDay+1)/numDays);
+			avg_daily_balance += tempBal*(numDays-lastDay+1);
 		}
+
+		avg_daily_balance = avg_daily_balance/numDays;
 
 		return avg_daily_balance;
 	}
