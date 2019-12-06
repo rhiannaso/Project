@@ -1972,9 +1972,13 @@ public class App implements Testable
 
 				// transaction info: transaction id, aid_to, aid_from, amount, type
 				if(transactionInfo.get(j).get(3).equals("fee")) {
-					System.out.println(j+": "+transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to bank");
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to bank");
+				} else if(transactionInfo.get(j).get(3).equals("deposit")) {
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" to "+transactionInfo.get(j).get(0));
+				} else if(transactionInfo.get(j).get(3).equals("withdrawal")) {
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1));
 				} else {
-					System.out.println(j+": "+transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to "+transactionInfo.get(j).get(0));
+					System.out.println(transactionInfo.get(j).get(3)+" $"+transactionInfo.get(j).get(2)+" from "+transactionInfo.get(j).get(1)+" to "+transactionInfo.get(j).get(0));
 				}
 			}
 			System.out.println("");
