@@ -27,7 +27,7 @@ public class Main
 		if( r.equals( "0" ) )
 		{
 			Scanner s = new Scanner(System.in);
-			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Accrue Interest Test\n4: Actual Sample DB Test\n5: Example Test (Long)\n-----------------");
+			System.out.println("-----------------\n0: Reset DB\n1: Run App\n2: Example Test\n3: Accrue Interest Test\n4: Actual Sample DB Test\n5: Testing Testable\n6: Example Test (Long)\n-----------------");
 			String input = s.nextLine();
 			if(input.equals("0")){
 				app.dropTables();
@@ -304,6 +304,153 @@ public class Main
 				System.out.println( r );
 				app.setTaxId("212116070");
 				r = app.collect("43947", "29107", 15);
+				System.out.println( r );
+
+			} else if (input.equals("5")) {
+				r = app.setDate(2008, 11, 10);
+				System.out.println( r );
+
+				// simple case of making student checking
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 1000, "344151573", "Joe Pepsi", "3210 State St" );
+				System.out.println( r );
+				// simple case of making interest checking
+				r = app.createCheckingSavingsAccount( AccountType.INTEREST_CHECKING, "41725", 15000, "201674933", "George Brush", "5346 Foothill Av" );
+				System.out.println( r );
+				// simple case of making savings
+				r = app.createCheckingSavingsAccount( AccountType.SAVINGS, "29107", 34000, "209378521", "Kelvin Costner", "Santa Cruz #3579" );
+				System.out.println( r );
+				// simple case of making pocket account
+				r = app.createPocketAccount("43947", "29107", 50, "209378521");
+				System.out.println( r );
+				r = app.createPocketAccount("76543", "41725", 20, "201674933");
+				System.out.println( r );
+				r = app.createPocketAccount("65656", "17431", 30, "344151573");
+				System.out.println( r );
+				// simple case of making customer
+				r = app.createCustomer("29107", "400651982", "Pit Wilson", "911 State St");
+				System.out.println( r );
+				// simple case of showing interest balance
+				r = app.showBalance("41725");
+				System.out.println( r );
+				// simple case of showing savings balance
+				r = app.showBalance("29107");
+				System.out.println( r );
+				// simple case of showing pocket balance
+				r = app.showBalance("43947");
+				System.out.println( r );
+				// simple case of showing student balance
+				r = app.showBalance("17431");
+				System.out.println( r );
+				// simple case of listing closed (when no closed)
+				r = app.listClosedAccounts();
+				System.out.println( r );
+				// simple case of regular deposit
+				r = app.deposit("41725", 100);
+				System.out.println( r );
+				// simple case of pay friend
+				r = app.payFriend("43947", "76543", 10);
+				System.out.println( r );
+
+				// case of making checking/savings with existing account id
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "17431", 1500, "123456789", "Trial Run", "123 Fail St" );
+				System.out.println( r );
+				// case of making checking/savings with < 1000
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "11111", 900, "123456789", "Trial Run", "123 Fail St" );
+				System.out.println( r );
+				// case of making checking/savings with < 0
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "22222", -1, "123456789", "Trial Run", "123 Fail St" );
+				System.out.println( r );
+				// case of making checking/savings with existing customer
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "54321", 1000, "344151573", "Joe Pepsi", "3210 State St" );
+				System.out.println( r );
+
+				// case of making pocket with non-existent parent account
+				r = app.createPocketAccount("76543", "34567", 20, "201674933");
+				System.out.println( r );
+				// case of making pocket with account that the customer doesn't own
+				r = app.createPocketAccount("76543", "29107", 20, "201674933");
+				System.out.println( r );
+				// case of making pocket with non-existent customer
+				r = app.createPocketAccount("76543", "41725", 20, "999999999");
+				System.out.println( r );
+				// close account and then list closed accounts
+				r = app.topUp("76543", 15075);
+				System.out.println( r );
+				r = app.listClosedAccounts();
+				System.out.println( r );
+				// case of making pocket with closed account
+				r = app.createPocketAccount("00000", "41725", 20, "201674933");
+				System.out.println( r );
+				// case of making pocket with < 0.02
+				r = app.createPocketAccount("33333", "29107", 0.01, "209378521");
+				System.out.println( r );
+				// case of making pocket with < 0
+				r = app.createPocketAccount("12121", "29107", -0.02, "209378521");
+				System.out.println( r );
+
+				// case of creating a customer with existing customer id
+				r = app.createCustomer("17431", "400651982", "Tommy Hilfiger", "555 Brand St");
+				System.out.println( r );
+				// case of creating a customer with non-existent account
+				r = app.createCustomer("66666", "876543210", "Tommy Hilfiger", "555 Brand St");
+				System.out.println( r );
+
+				// case of top-up (on existing pocket)
+				r = app.topUp("43947", 1000);
+				System.out.println( r );
+				// case of top-up with invalid pocket id
+				r = app.topUp("88888", 1000);
+				System.out.println( r );
+				// case of top-up where parent account funds insufficient
+				r = app.createCheckingSavingsAccount( AccountType.STUDENT_CHECKING, "77777", 5000, "987654321", "For Pocket", "111 Oops St" );
+				System.out.println( r );
+				r = app.createPocketAccount("10101", "77777", 5000, "987654321");
+				System.out.println( r );
+				// case of top-up where not a pocket account
+				r = app.topUp("29107", 1000);
+				System.out.println( r );
+
+				// case of showing balance for non-existent account
+				r = app.showBalance("01010");
+				System.out.println( r );
+				// case of showing balance for a closed account
+				r = app.showBalance("41725");
+				System.out.println( r );
+
+				// case of deposit with a negative amount
+				r = app.deposit("41725", -100);
+				System.out.println( r );
+				// case of deposit with non-existent account
+				r = app.deposit("41414", 100);
+				System.out.println( r );
+				// case of deposit on closed account
+				r = app.deposit("41725", 100);
+				System.out.println( r );
+				// case of deposit from pocket
+				r = app.deposit("43947", 100);
+				System.out.println( r );
+
+				// case of pay friend when "to" is not a pocket account
+				r = app.payFriend("43947", "77777", 10);
+				System.out.println( r );
+				// case of pay friend when "from" is not a pocket account
+				r = app.payFriend("77777", "43947", 10);
+				System.out.println( r );
+				// case of pay friend when both are not pocket accounts
+				r = app.payFriend("77777", "29107", 10);
+				System.out.println( r );
+				// case of pay friend when insufficient funds
+				r = app.payFriend("43947", "65656", 5000);
+				System.out.println( r );
+
+				// case of invalid day
+				r = app.setDate(2008, 11, 50);
+				System.out.println( r );
+				// case of invalid month
+				r = app.setDate(2008, 15, 10);
+				System.out.println( r );
+				// case of invalid year
+				r = app.setDate(25032, 11, 10);
 				System.out.println( r );
 
 			} else {
