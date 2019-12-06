@@ -233,7 +233,7 @@ public class App implements Testable
 								"tid INTEGER, " +
 								"aid_to VARCHAR(5), " +
 								"aid_from VARCHAR(5), " +
-								"PRIMARY KEY (aid_to, aid_from, tid), " +
+								"PRIMARY KEY (tid, aid_to, aid_from), " +
 								"FOREIGN KEY (tid) REFERENCES Transactions(tid) " +
 								"ON DELETE CASCADE )";
 
@@ -295,6 +295,11 @@ public class App implements Testable
 		String newDate = Integer.toString(year) + "-" + Integer.toString(month)  + "-" + Integer.toString(day);
 		c.setLenient(false);
 		c.set(year, month-1, day);
+		if(Integer.toString(year).length() > 4) {
+			System.out.println("Invalid date entered");
+			return "1 "+newDate;
+		}
+
 		try {
 			c.getTime();
 		}
@@ -371,7 +376,7 @@ public class App implements Testable
 	@Override
 	public String createCheckingSavingsAccount( AccountType accountType, String id, double initialBalance, String tin, String name, String address )
 	{
-		if (Double.compare(initialBalance, 1000) < 0) {
+		if (Double.compare(initialBalance, 1000) < 0 || Double.compare(initialBalance, 0) < 0) {
 			return "1 " + id + " " + accountType + " " + initialBalance + " " + tin;
 		} else {
 			String createAccount = "INSERT INTO Accounts(aid, init_balance, curr_balance, interest, active, type) " +
@@ -454,6 +459,12 @@ public class App implements Testable
 			System.out.println("Attempting to link pocket account to a closed account. Pocket account creation failed.");
 			return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
 		}
+
+		String checkCust = checkCustomerExists(tin);
+			if(checkCust.equals("0")) {
+				System.out.println("Customer with the given tax ID does not exist.");
+				return "1 " + id + " " + AccountType.POCKET + " " + initialTopUp + " " + tin;
+			}
 
 		// Check if customer already has the savings or checkings account
 		ArrayList<String> ownedAccs = new ArrayList<String>();
@@ -785,6 +796,24 @@ public class App implements Testable
 	public String showBalance( String accountId )
 	{
 		double balance = 0;
+		// check if account exists
+		String checkAcc = "SELECT COUNT(*) FROM Accounts A WHERE A.aid = ?";
+		try(PreparedStatement statement = _connection.prepareStatement(checkAcc)) {
+			statement.setString(1, accountId);
+			ResultSet rs = statement.executeQuery();
+			while(rs.next()) {
+				if(rs.getInt(1) == 0) {
+					System.out.println("Could not retrieve balance");
+					return "1 " + balance; 
+				}
+			}
+		} catch ( SQLException e )
+		{
+			System.err.println( e.getMessage() );
+			System.out.println("Could not retrieve balance");
+			return "1 " + balance;
+		}
+
 		balance = getBalance(accountId);
 		if(Double.compare(balance, -1.00) == 0) {
 			System.out.println("Could not retrieve balance.");
