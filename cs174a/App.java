@@ -1702,7 +1702,7 @@ public class App implements Testable
 			}
 		}
 		if((double)transactions.lastKey() != numDays) {
-			avg_daily_balance += tempBal*((numDays-lastDay)/numDays);
+			avg_daily_balance += tempBal*((numDays-lastDay+1)/numDays);
 		}
 
 		return avg_daily_balance;
