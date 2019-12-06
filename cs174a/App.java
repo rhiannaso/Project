@@ -1709,12 +1709,6 @@ public class App implements Testable
 	}
 
 	public String accrueInterest(String accountId) {
-		boolean isEnd = checkEndOfMonth();
-		if(isEnd == false) {
-			System.out.println("Cannot generate monthly statements until the end of the month");
-			return "1";
-		}
-
 		boolean checkType = isCheckingOrSavings(accountId);
 		if (checkType == false) {
 			System.out.println("The involved accounts must be a savings/checking account.");
@@ -2156,6 +2150,12 @@ public class App implements Testable
 	public String addInterest() {
 		// Select all aids for accounts with active = 1 and checking or savingsand put in arraylist. iterate through arraylist and call accrueinterest
 		// find a way to note that this has been done for the month
+		boolean isEnd = checkEndOfMonth();
+		if(isEnd == false) {
+			System.out.println("Cannot generate monthly statements until the end of the month");
+			return "1";
+		}
+
 		try(Statement checkDone = _connection.createStatement()) {
 			ResultSet rs = checkDone.executeQuery("SELECT COUNT(*) FROM Transactions T WHERE T.type = \'addInterest\'");
 			while(rs.next()) {
@@ -2183,11 +2183,17 @@ public class App implements Testable
 			return "1";
 		}
 
+		String check = "";
 		for(int i = 0; i < openAccs.size(); i++) {
-			accrueInterest(openAccs.get(i));
+			check = accrueInterest(openAccs.get(i));
+			if(check.equals("1")) {
+				break;
+			}
 		}
 
-		createTransaction("addInterest", 0.00, 0.00, 0, 0.00, "0", "0", 0.00, 0.00);
+		if(check.equals("1") == false) {
+			createTransaction("addInterest", 0.00, 0.00, 0, 0.00, "0", "0", 0.00, 0.00);
+		}
 
 		return "0";
 	}
